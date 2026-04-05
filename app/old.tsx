@@ -2,39 +2,23 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import Footer from "@/components/Footer";
 
 const sections = [
-  {
-    title: "URBAN STYLE",
-    image: "/images/slide1.jpg",
-    link: "/products/1",
-  },
-  {
-    title: "MINIMAL WEAR",
-    image: "/images/slide2.jpg",
-    link: "/products/2",
-  },
-  {
-    title: "PREMIUM LOOK",
-    image: "/images/slide3.jpg",
-    link: "/products/3",
-  },
-  {
-    type: "footer", // 👈 special type
-  },
+  { title: "URBAN STYLE", image: "/images/slide1.jpg", link: "/products/1" },
+  { title: "MINIMAL WEAR", image: "/images/slide2.jpg", link: "/products/2" },
+  { title: "PREMIUM LOOK", image: "/images/slide3.jpg", link: "/products/3" },
 ];
 
 export default function Home() {
   const [current, setCurrent] = useState(0);
   const [prev, setPrev] = useState<number | null>(null);
-  const [direction, setDirection] = useState<"up" | "down">("up");
+  const [direction, setDirection] = useState<"up" | "down">("down");
 
   const isAnimating = useRef(false);
   const delta = useRef(0);
 
   const THRESHOLD = 100;
-  const DURATION = 1400;
+  const DURATION = 800;
 
   const handleScroll = (e: WheelEvent) => {
     if (isAnimating.current) return;
@@ -72,28 +56,20 @@ export default function Home() {
     return () => window.removeEventListener("wheel", handleScroll);
   }, [current]);
 
-  useEffect(() => {
-    document.body.classList.add("landing-no-scroll");
-
-    return () => {
-      document.body.classList.remove("landing-no-scroll");
-    };
-  }, []);
-
   return (
-    <main className="relative h-[calc(100vh-52px)] w-full overflow-hidden">
-      {/* Previous Section (stays below) */}
+    <main className="relative h-screen w-full overflow-hidden">
+      {/* Previous */}
       {prev !== null && (
         <div className="section z-10">
           <Slide section={sections[prev]} />
         </div>
       )}
 
-      {/* Current Section (reveals on top) */}
+      {/* Current */}
       <div
-        key={current + direction} // 🔥 ensures animation runs every time
+        key={current}
         className={`section z-20 ${
-          direction === "down" ? "reveal-from-bottom" : "reveal-from-top"
+          direction === "down" ? "slide-up" : "slide-down"
         }`}
       >
         <Slide section={sections[current]} />
@@ -103,35 +79,13 @@ export default function Home() {
 }
 
 function Slide({ section }: any) {
-  // 👇 FOOTER SLIDE
-  if (section.type === "footer") {
-    return (
-      <div className="w-full h-full bg-black flex flex-col justify-end">
-        {/* <div className="w-full"> */}
-        <Footer showLogoName={true} />
-        {/* </div> */}
-      </div>
-    );
-  }
-
-  // 👇 NORMAL SLIDE
   return (
     <div className="relative w-full h-full">
-      <img
-        src={section.image}
-        alt={section.title}
-        className="w-full h-full object-cover"
-      />
-
-      {/* Overlay */}
+      <img src={section.image} className="w-full h-full object-cover" />
       <div className="absolute inset-0 bg-black/30" />
-
-      {/* Clickable */}
       <Link href={section.link} className="absolute inset-0 z-10" />
-
-      {/* Text */}
       <div className="absolute bottom-16 left-16 text-white z-20">
-        <p style={{ letterSpacing: "4px" }}>{section.title}</p>
+        <p className="tracking-[4px] text-sm">{section.title}</p>
       </div>
     </div>
   );

@@ -19,8 +19,172 @@
   }
 }
 
-body {
+/* body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-open-sans), Arial, sans-serif;
+} */
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--background);
+  /* color: var(--foreground); */
+  /* overflow: hidden; */
+  font-family: var(--font-open-sans), Arial, sans-serif;
 }
+
+.landing-no-scroll {
+  overflow: hidden;
+}
+
+/* Smooth animation */
+.section {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Slide animations */
+.slide-down {
+  animation: slideDown 0.8s ease forwards;
+}
+
+.slide-up {
+  animation: slideUp 0.8s ease forwards;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* image */
+/* .section img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  will-change: clip-path;
+} */
+
+/* ===== REVEAL FROM TOP (scroll down) ===== */
+/* .reveal-from-top {
+  animation: revealTop 1s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+@keyframes revealTop {
+  0% {
+    clip-path: inset(0 0 100% 0);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+  }
+} */
+
+/* ===== REVEAL FROM BOTTOM (scroll up) ===== */
+/* .reveal-from-bottom {
+  animation: revealBottom 1s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+@keyframes revealBottom {
+  0% {
+    clip-path: inset(100% 0 0 0);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+  }
+} */
+
+/* image */
+.section img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  will-change: clip-path;
+  transform: scale(1.12); /* start slightly zoomed */
+}
+
+/* ===== SCROLL DOWN → reveal from TOP ===== */
+.reveal-from-top {
+  animation: revealTop 1.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes revealTop {
+  0% {
+    clip-path: inset(0 0 100% 0);
+    transform: scale(1.12);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    transform: scale(1);
+  }
+}
+
+/* ===== SCROLL UP → reveal from BOTTOM ===== */
+.reveal-from-bottom {
+  animation: revealBottom 1.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes revealBottom {
+  0% {
+    clip-path: inset(100% 0 0 0);
+    transform: scale(1.12);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    transform: scale(1);
+  }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+
+.input {
+  @apply w-full border border-gray-300 px-4 py-3 outline-none focus:border-black;
+}
+
+.label {
+  @apply text-sm mb-2 text-gray-600;
+}
+
+.chip {
+  @apply px-4 py-2 border text-sm cursor-pointer;
+}
+
+.chip.active {
+  @apply bg-black text-white;
+}
+
+.upload-box {
+  @apply border border-dashed border-gray-300 p-6 text-center cursor-pointer relative;
+}
+
+.upload-box input {
+  @apply absolute inset-0 opacity-0 cursor-pointer;
+}
+
+.preview-img {
+  @apply w-20 h-20 object-cover border;
+}
+
