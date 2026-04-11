@@ -37,6 +37,7 @@ export default function AddProductPage() {
   const [colorInput, setColorInput] = useState({ name: "", value: "#000000" });
   const [images, setImages] = useState<string[]>([]);
   const [thumbnail, setThumbnail] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   /* ------------------ SIZE ------------------ */
   const toggleSize = (size: string) =>
@@ -86,6 +87,7 @@ export default function AddProductPage() {
     setVariantErrors(errs);
     if (errs.some(Boolean)) return;
 
+    setIsLoading(true);
     try {
       const payload = {
         title: data.title,
@@ -102,6 +104,8 @@ export default function AddProductPage() {
     } catch (err: any) {
       console.error(err);
       alert(err.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -272,9 +276,13 @@ export default function AddProductPage() {
             <button
               type="submit"
               onClick={(e) => { e.preventDefault(); handleSubmit(onSubmit)(); }}
-              className="btn-primary w-full sm:w-auto"
+              disabled={isLoading}
+              className="btn-primary w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              Save Product
+              {isLoading && (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              )}
+              {isLoading ? "Saving..." : "Save Product"}
             </button>
           </div>
         </form>

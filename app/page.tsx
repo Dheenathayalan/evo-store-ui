@@ -32,6 +32,7 @@ export default function Home() {
 
   const isAnimating = useRef(false);
   const delta = useRef(0);
+  const touchStartY = useRef(0);
 
   const THRESHOLD = 100;
   const DURATION = 1400;
@@ -67,9 +68,58 @@ export default function Home() {
     delta.current = 0;
   };
 
+  const handleTouchStart = (e: TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: TouchEvent) => {
+    if (isAnimating.current) return;
+
+    const touchEndY = e.changedTouches[0].clientY;
+    const diff = touchStartY.current - touchEndY;
+
+    if (Math.abs(diff) < THRESHOLD) return;
+
+    let newIndex = current;
+
+    if (diff > 0 && current < sections.length - 1) {
+      // Swiped up → scroll down
+      newIndex = current + 1;
+      setDirection("down");
+    } else if (diff < 0 && current > 0) {
+      // Swiped down → scroll up
+      newIndex = current - 1;
+      setDirection("up");
+    }
+
+    if (newIndex !== current) {
+      isAnimating.current = true;
+      setPrev(current);
+      setCurrent(newIndex);
+
+      setTimeout(() => {
+        setPrev(null);
+        isAnimating.current = false;
+      }, DURATION);
+    }
+  };
+
   useEffect(() => {
     window.addEventListener("wheel", handleScroll, { passive: true });
-    return () => window.removeEventListener("wheel", handleScroll);
+    
+    // Enable touch events only on mobile devices
+    if ("ontouchstart" in window) {
+      window.addEventListener("touchstart", handleTouchStart as EventListener, { passive: true });
+      window.addEventListener("touchend", handleTouchEnd as EventListener, { passive: true });
+    }
+    
+    return () => {
+      window.removeEventListener("wheel", handleScroll);
+      if ("ontouchstart" in window) {
+        window.removeEventListener("touchstart", handleTouchStart as EventListener);
+        window.removeEventListener("touchend", handleTouchEnd as EventListener);
+      }
+    };
   }, [current]);
 
   useEffect(() => {
