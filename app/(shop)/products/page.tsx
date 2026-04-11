@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import ProductCard from "@/components/ProductCard";
@@ -7,7 +8,8 @@ import { getProducts, searchProducts } from "@/lib/api/products";
 
 const LIMIT = 10;
 
-export default function ProductsPage() {
+// Inner component uses useSearchParams — must be inside <Suspense>
+function ProductList() {
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get("search") ?? "";
 
@@ -155,5 +157,17 @@ export default function ProductsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={
+      <div className="bg-[#f5f5f5] min-h-screen flex items-center justify-center">
+        <span className="text-gray-500 text-sm tracking-widest">Loading...</span>
+      </div>
+    }>
+      <ProductList />
+    </Suspense>
   );
 }

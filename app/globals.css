@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Smooth luxury feel */
+* {
+  transition: all 0.2s ease;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -159,7 +164,6 @@ body {
   scrollbar-width: none;
 }
 
-
 .input {
   @apply w-full border border-gray-300 px-4 py-3 outline-none focus:border-black;
 }
@@ -187,4 +191,3 @@ body {
 .preview-img {
   @apply w-20 h-20 object-cover border;
 }
-

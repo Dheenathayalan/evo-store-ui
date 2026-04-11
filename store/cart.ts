@@ -2,7 +2,26 @@
 
 import { create } from "zustand";
 
-export const useCart = create((set) => ({
+interface CartItem {
+  id: number;
+  name: string;
+  price: number;
+  qty: number;
+  image: string;
+  color: string;
+  size: string;
+}
+
+interface CartState {
+  isOpen: boolean;
+  items: CartItem[];
+  openCart: () => void;
+  closeCart: () => void;
+  increaseQty: (id: number) => void;
+  decreaseQty: (id: number) => void;
+}
+
+export const useCart = create<CartState>((set) => ({
   isOpen: false,
   items: [
     {
