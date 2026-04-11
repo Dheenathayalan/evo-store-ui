@@ -1,9 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { register } from "@/lib/api/auth";
+import { useAuth } from "@/store/auth";
+
 
 export default function SignupPage() {
+  const router = useRouter();
+  const { isLoggedIn } = useAuth();
+  const [mounted, setMounted] = useState(false);
+
+  // ── All hooks must be declared before any conditional return ──
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -13,13 +22,49 @@ export default function SignupPage() {
     updates: false,
     agree: false,
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (mounted && isLoggedIn()) router.replace("/profile");
+  }, [mounted]);
+
+  if (!mounted || isLoggedIn()) return <div className="h-[calc(100vh-52px)]" />;
+
 
   const handleChange = (e: any) => {
     const { name, value, type, checked } = e.target;
-    setForm({
-      ...form,
-      [name]: type === "checkbox" ? checked : value,
-    });
+    setForm({ ...form, [name]: type === "checkbox" ? checked : value });
+    setError(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.agree) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      await register({
+        first_name: form.firstName,
+        last_name: form.lastName,
+        email: form.email,
+        password: form.password,
+        dob: form.dob,
+        is_admin: false,
+      });
+
+      router.push("/login");
+    } catch (err: any) {
+      setError(
+        typeof err === "string" ? err : "Registration failed. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -36,7 +81,7 @@ export default function SignupPage() {
 
       {/* Content */}
       <div className="relative z-10 flex items-center justify-center h-full">
-        <div className="w-[520px] max-w-[90%]">
+        <form onSubmit={handleSubmit} className="w-[520px] max-w-[90%]">
           {/* First + Last Name */}
           <div className="flex gap-6 mb-8">
             <div className="w-1/2">
@@ -47,6 +92,7 @@ export default function SignupPage() {
                 name="firstName"
                 value={form.firstName}
                 onChange={handleChange}
+                required
                 className="w-full bg-transparent border-b border-white/50 focus:border-white outline-none py-2"
               />
             </div>
@@ -59,6 +105,7 @@ export default function SignupPage() {
                 name="lastName"
                 value={form.lastName}
                 onChange={handleChange}
+                required
                 className="w-full bg-transparent border-b border-white/50 focus:border-white outline-none py-2"
               />
             </div>
@@ -72,6 +119,7 @@ export default function SignupPage() {
               name="email"
               value={form.email}
               onChange={handleChange}
+              required
               className="w-full bg-transparent border-b border-white/50 focus:border-white outline-none py-2"
             />
           </div>
@@ -86,6 +134,7 @@ export default function SignupPage() {
               name="password"
               value={form.password}
               onChange={handleChange}
+              required
               className="w-full bg-transparent border-b border-white/50 focus:border-white outline-none py-2"
             />
           </div>
@@ -100,6 +149,7 @@ export default function SignupPage() {
               name="dob"
               value={form.dob}
               onChange={handleChange}
+              required
               className="w-full bg-transparent border-b border-white/50 focus:border-white outline-none py-2 text-white"
             />
           </div>
@@ -132,12 +182,25 @@ export default function SignupPage() {
             </label>
           </div>
 
+          {/* Error */}
+          {error && (
+            <p className="text-red-400 text-sm mb-4 text-center">{error}</p>
+          )}
+
           {/* Submit */}
           <button
-            disabled={!form.agree}
-            className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-50 transition py-3 rounded-full tracking-widest mt-4"
+            type="submit"
+            disabled={!form.agree || loading}
+            className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-50 transition py-3 rounded-full tracking-widest mt-4 flex items-center justify-center gap-2"
           >
-            CREATE ACCOUNT
+            {loading ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                CREATING...
+              </>
+            ) : (
+              "CREATE ACCOUNT"
+            )}
           </button>
 
           {/* Login link */}
@@ -147,7 +210,7 @@ export default function SignupPage() {
               Login
             </Link>
           </p>
-        </div>
+        </form>
       </div>
     </div>
   );
