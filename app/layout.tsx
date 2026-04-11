@@ -3,6 +3,7 @@ import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Open_Sans } from "next/font/google";
+import CartDrawer from "@/components/CartDrawer";
 
 const openSans = Open_Sans({
   subsets: ["latin"],
@@ -26,6 +27,7 @@ export default function RootLayout({
         <Header />
         {children}
         <Footer />
+        <CartDrawer />
       </body>
     </html>
   );

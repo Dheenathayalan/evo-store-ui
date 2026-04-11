@@ -3,7 +3,8 @@
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createProduct } from "@/lib/api/products";
 
 /* ------------------ SCHEMA ------------------ */
 const schema = z.object({
@@ -24,6 +25,7 @@ const brands = ["YourBrand", "Nike", "Adidas"];
 const categories = ["tops", "bottoms", "accessories"];
 const sizesList = ["S", "M", "L", "XL"];
 
+/* ------------------ PAGE ------------------ */
 export default function AddProductPage() {
   const {
     register,
@@ -33,6 +35,8 @@ export default function AddProductPage() {
 
   const [sizes, setSizes] = useState<string[]>([]);
   const [colors, setColors] = useState<any[]>([]);
+  const [variants, setVariants] = useState<any[]>([]);
+
   const [colorInput, setColorInput] = useState({
     name: "",
     value: "#000000",
@@ -41,14 +45,26 @@ export default function AddProductPage() {
   const [images, setImages] = useState<string[]>([]);
   const [thumbnail, setThumbnail] = useState<string | null>(null);
 
-  /* ------------------ HANDLERS ------------------ */
-
+  /* ------------------ SIZE ------------------ */
   const toggleSize = (size: string) => {
     setSizes((prev) =>
       prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size],
     );
   };
 
+  /* ------------------ COLOR ------------------ */
+  const addColor = () => {
+    if (!colorInput.name) return;
+
+    setColors((prev) => [...prev, colorInput]);
+    setColorInput({ name: "", value: "#000000" });
+  };
+
+  const removeColor = (index: number) => {
+    setColors((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  /* ------------------ IMAGE ------------------ */
   const handleImageUpload = (files: FileList | null) => {
     if (!files) return;
 
@@ -64,39 +80,100 @@ export default function AddProductPage() {
     setThumbnail(URL.createObjectURL(file));
   };
 
-  const addColor = () => {
-    if (!colorInput.name) return;
+  /* ------------------ VARIANTS ------------------ */
+  useEffect(() => {
+    if (sizes.length === 0 || colors.length === 0) {
+      setVariants([]);
+      return;
+    }
 
-    setColors((prev) => [...prev, colorInput]);
-    setColorInput({ name: "", value: "#000000" });
+    const newVariants: any[] = [];
+
+    sizes.forEach((size) => {
+      colors.forEach((color) => {
+        const existing = variants.find(
+          (v) => v.size === size && v.color === color.name,
+        );
+
+        newVariants.push({
+          size,
+          color: color.name,
+          stock: existing?.stock || 0,
+          price: existing?.price || 0,
+        });
+      });
+    });
+
+    setVariants(newVariants);
+  }, [sizes, colors]);
+
+  const updateVariant = (
+    index: number,
+    key: "stock" | "price",
+    value: number,
+  ) => {
+    setVariants((prev) => {
+      const updated = [...prev];
+      updated[index][key] = value;
+      return updated;
+    });
   };
 
-  const removeColor = (index: number) => {
-    setColors((prev) => prev.filter((_, i) => i !== index));
-  };
+  /* ------------------ SUBMIT ------------------ */
+  const onSubmit = async (data: any) => {
+    try {
+      if (variants.length === 0) {
+        alert("Please select sizes & colors");
+        return;
+      }
+      const payload = {
+        title: data.title,
+        slug: data.slug,
+        brand: data.brand,
+        category: data.category,
+        description: data.description,
+        base_price: Number(data.base_price),
 
-  const onSubmit = (data: any) => {
-    const payload = {
-      ...data,
-      base_price: Number(data.base_price),
-      sizes,
-      colors,
-      images,
-      thumbnail,
-    };
+        attributes: {
+          colors: colors.map((c) => ({
+            name: c.name,
+            value: c.value,
+          })),
+          sizes,
+        },
 
-    console.log("FINAL PAYLOAD", payload);
+        variants: variants.map((v) => ({
+          color: v.color,
+          size: v.size,
+          price: Number(v.price),
+          stock: Number(v.stock),
+        })),
+      };
+
+      console.log("FINAL API PAYLOAD", payload);
+
+      const res = await createProduct(payload);
+
+      console.log("SUCCESS", res);
+
+      alert("Product created successfully 🚀");
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message);
+    }
   };
 
   /* ------------------ UI ------------------ */
-
   return (
-    <div className="min-h-screen bg-[#f8f8f8] p-10">
-      <div className="max-w-6xl mx-auto bg-white p-10 shadow-sm">
+    <div className="min-h-screen bg-[#f6f6f6] p-10">
+      <div className="max-w-6xl mx-auto bg-white p-10 shadow-sm rounded">
         <h1 className="text-2xl font-semibold mb-8">Add Product</h1>
 
         <form
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit(onSubmit)(e);
+          }}
           className="grid md:grid-cols-2 gap-10"
         >
           {/* LEFT */}
@@ -208,10 +285,7 @@ export default function AddProductPage() {
                   className="input"
                   value={colorInput.name}
                   onChange={(e) =>
-                    setColorInput({
-                      ...colorInput,
-                      name: e.target.value,
-                    })
+                    setColorInput({ ...colorInput, name: e.target.value })
                   }
                 />
 
@@ -220,67 +294,132 @@ export default function AddProductPage() {
                   className="w-14 h-12 border"
                   value={colorInput.value}
                   onChange={(e) =>
-                    setColorInput({
-                      ...colorInput,
-                      value: e.target.value,
-                    })
+                    setColorInput({ ...colorInput, value: e.target.value })
                   }
                 />
 
-                <button
-                  type="button"
-                  onClick={addColor}
-                  className="bg-black text-white px-4"
-                >
+                <button type="button" onClick={addColor} className="btn">
                   Add
                 </button>
               </div>
 
               <div className="flex gap-3 flex-wrap">
                 {colors.map((c, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-2 border px-3 py-1"
-                  >
+                  <div key={i} className="chip flex items-center gap-2">
                     <div
                       className="w-4 h-4 rounded-full"
                       style={{ background: c.value }}
                     />
-                    <span>{c.name}</span>
-
-                    <button
-                      type="button"
-                      onClick={() => removeColor(i)}
-                      className="text-red-500 text-xs"
-                    >
-                      ✕
-                    </button>
+                    {c.name}
+                    <button type="button" onClick={() => removeColor(i)}>✕</button>
                   </div>
                 ))}
               </div>
             </div>
           </div>
 
+          {/* VARIANTS */}
+          {variants.length > 0 && (
+            <div className="col-span-2">
+              <p className="label mb-4">Variants</p>
+
+              <div className="border rounded overflow-hidden">
+                <div className="grid grid-cols-4 bg-gray-100 px-4 py-3 text-sm font-medium">
+                  <span>Size</span>
+                  <span>Color</span>
+                  <span>Stock</span>
+                  <span>Price</span>
+                </div>
+
+                {variants.map((v, i) => (
+                  <div key={i} className="grid grid-cols-4 px-4 py-3 border-t">
+                    <span>{v.size}</span>
+                    <span>{v.color}</span>
+
+                    <input
+                      type="number"
+                      value={v.stock}
+                      onChange={(e) =>
+                        updateVariant(i, "stock", Number(e.target.value))
+                      }
+                      className="input"
+                    />
+
+                    <input
+                      type="number"
+                      value={v.price}
+                      onChange={(e) =>
+                        updateVariant(i, "price", Number(e.target.value))
+                      }
+                      className="input"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* SUBMIT */}
           <div className="col-span-2">
-            <button className="bg-black text-white px-8 py-3">
-              Save Product
-            </button>
+            <button type="submit" onClick={(e) => { e.preventDefault(); handleSubmit(onSubmit)(); }} className="btn-primary">Save Product</button>
           </div>
         </form>
       </div>
+
+      {/* STYLES */}
+      <style jsx>{`
+        .input {
+          width: 100%;
+          border: 1px solid #ddd;
+          padding: 10px;
+          outline: none;
+        }
+        .label {
+          font-size: 12px;
+          margin-bottom: 6px;
+        }
+        .chip {
+          border: 1px solid #ccc;
+          padding: 6px 10px;
+          cursor: pointer;
+        }
+        .chip.active {
+          background: black;
+          color: white;
+        }
+        .upload-box {
+          border: 2px dashed #ccc;
+          padding: 20px;
+          text-align: center;
+        }
+        .preview-img {
+          width: 80px;
+          height: 80px;
+          object-fit: cover;
+        }
+        .btn {
+          background: black;
+          color: white;
+          padding: 10px 16px;
+        }
+        .btn-primary {
+          background: black;
+          color: white;
+          padding: 12px 20px;
+          margin-top: 20px;
+        }
+      `}</style>
     </div>
   );
 }
 
-/* ------------------ COMPONENT ------------------ */
-
+/* ------------------ INPUT ------------------ */
 function Input({ label, children, error }: any) {
   return (
     <div>
       <p className="label">{label}</p>
       {children}
-      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+      {error && <p className="text-red-500 text-xs">{error}</p>}
     </div>
   );
 }

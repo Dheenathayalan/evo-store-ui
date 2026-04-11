@@ -1,9 +1,16 @@
 "use client";
 
+import { useCart } from "@/store/cart";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
 export default function ProductCard({ product, index }: any) {
+  const { openCart } = useCart();
+
+  const addToCart = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    openCart();
+  };
   return (
     <Link href={`/products/${product.slug || product.id}`}>
       <motion.div
@@ -27,7 +34,7 @@ export default function ProductCard({ product, index }: any) {
           {/* Hover Overlay */}
           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center">
             <button
-              onClick={(e) => e.preventDefault()} // 🚀 prevents navigation
+              onClick={(e) => addToCart(e)} // 🚀 prevents navigation
               className="border border-white px-6 py-2 text-white tracking-widest hover:bg-white hover:text-black transition"
             >
               ADD TO CART
