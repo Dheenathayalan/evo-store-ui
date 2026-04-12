@@ -3,9 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { getProductBySlug } from "@/lib/api/products";
+import { addToCart } from "@/lib/api/cart";
+import { useCart } from "@/store/cart";
 
 export default function ProductDetails() {
   const { slug } = useParams<{ slug: string }>();
+  const { openCart, addItem } = useCart();
 
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -13,6 +16,8 @@ export default function ProductDetails() {
   const [size, setSize] = useState<string>("");
   const [color, setColor] = useState<string>(""); // color name, matches variant.color
   const [hoveredColor, setHoveredColor] = useState<string | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   const carouselRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -226,12 +231,67 @@ export default function ProductDetails() {
             </div>
           )}
 
+          {/* Quantity */}
+          <div className="flex items-center gap-4 mb-6 text-sm">
+            <span className="text-gray-600">Quantity:</span>
+            <div className="flex items-center gap-3 border w-fit px-2 py-1">
+              <button 
+                onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                className="cursor-pointer"
+              >−</button>
+              <span className="w-6 text-center">{quantity}</span>
+              <button 
+                onClick={() => setQuantity(q => q + 1)}
+                className="cursor-pointer"
+              >+</button>
+            </div>
+          </div>
+
           {/* Buttons */}
-          <div className="flex gap-4 mb-4">
-            <button className="flex-1 bg-black text-white py-3">
-              ADD TO CART
+          <div className="flex gap-4 mb-4 flex-col sm:flex-row">
+            <button 
+              onClick={async () => {
+                if (!size || !color) {
+                  alert("Please select size and color");
+                  return;
+                }
+                
+                setIsAddingToCart(true);
+                try {
+                  // Use the selected variant's SKU
+                  const sku = activeVariant?.sku || `${product._id || product.id}-${color}-${size}`;
+                  const res = await addToCart(sku, quantity);
+                  
+                  // Add to local cart store
+                  const cartItem = {
+                    id: Date.now(),
+                    name: product.title,
+                    price: displayPrice,
+                    qty: quantity,
+                    image: images[0] || "/images/placeholder.jpg",
+                    color,
+                    size,
+                    sku,
+                  };
+                  addItem(cartItem);
+                  
+                  // Open cart drawer
+                  openCart();
+                } catch (err: any) {
+                  alert(err?.message || "Failed to add to cart");
+                } finally {
+                  setIsAddingToCart(false);
+                }
+              }}
+              disabled={isAddingToCart || variantStock === 0}
+              className="flex-1 bg-black text-white py-3 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {isAddingToCart && (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              )}
+              {isAddingToCart ? "ADDING..." : "ADD TO CART"}
             </button>
-            <button className="flex-1 border border-black py-3">BUY</button>
+            <button className="flex-1 border border-black py-3 text-sm font-medium">BUY</button>
           </div>
 
           <p className="text-xs text-gray-600 mb-6">

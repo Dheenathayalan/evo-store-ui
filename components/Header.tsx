@@ -12,7 +12,7 @@ import { searchProducts } from "@/lib/api/products";
 
 export default function Header() {
   const isLoggedIn = useAuth((s) => s.isLoggedIn)();
-  const { openCart } = useCart();
+  const { openCart, fetchCartItems } = useCart();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -27,7 +27,11 @@ export default function Header() {
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const headerRef = useRef<HTMLElement | null>(null);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+    // Fetch cart items on app load
+    fetchCartItems();
+  }, [fetchCartItems]);
 
   const profileHref = mounted && isLoggedIn ? "/profile" : "/login";
   const isProductList = pathname === "/products";
