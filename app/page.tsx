@@ -105,17 +105,24 @@ export default function Home() {
   };
 
   useEffect(() => {
-    window.addEventListener("wheel", handleScroll, { passive: true });
+    const isMobile = "ontouchstart" in window;
     
-    // Enable touch events only on mobile devices
-    if ("ontouchstart" in window) {
+    // Wheel events only for desktop/web
+    if (!isMobile) {
+      window.addEventListener("wheel", handleScroll, { passive: true });
+    }
+    
+    // Touch events only for mobile devices
+    if (isMobile) {
       window.addEventListener("touchstart", handleTouchStart as EventListener, { passive: true });
       window.addEventListener("touchend", handleTouchEnd as EventListener, { passive: true });
     }
     
     return () => {
-      window.removeEventListener("wheel", handleScroll);
-      if ("ontouchstart" in window) {
+      if (!isMobile) {
+        window.removeEventListener("wheel", handleScroll);
+      }
+      if (isMobile) {
         window.removeEventListener("touchstart", handleTouchStart as EventListener);
         window.removeEventListener("touchend", handleTouchEnd as EventListener);
       }

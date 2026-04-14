@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Open_Sans } from "next/font/google";
 import CartDrawer from "@/components/CartDrawer";
+import Script from "next/script";
 
 const openSans = Open_Sans({
   subsets: ["latin"],
@@ -28,6 +29,12 @@ export default function RootLayout({
         {children}
         <Footer />
         <CartDrawer />
+
+        {/* Razorpay Script */}
+        <Script
+          src="https://checkout.razorpay.com/v1/checkout.js"
+          strategy="beforeInteractive"
+        />
       </body>
     </html>
   );

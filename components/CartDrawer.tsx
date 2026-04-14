@@ -1,9 +1,11 @@
 "use client";
 
 import { useCart } from "@/store/cart";
+import { useRouter } from "next/navigation";
 
 export default function CartDrawer() {
-  const { isOpen, closeCart, items, increaseQty, decreaseQty, isLoading } = useCart();
+  const { isOpen, closeCart, items, increaseQty, decreaseQty, isLoading, isRemovingFromCart } = useCart();
+  const router = useRouter();
 
   const total = items.reduce(
     (acc: number, item: any) => acc + item.price * item.qty,
@@ -66,7 +68,17 @@ export default function CartDrawer() {
 
                   {/* QTY */}
                   <div className="flex items-center gap-3 mt-3 border w-fit px-2 py-1">
-                    <button onClick={() => decreaseQty(item.id)} className="cursor-pointer">−</button>
+                    <button 
+                      onClick={() => decreaseQty(item.id)} 
+                      disabled={isRemovingFromCart}
+                      className="cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isRemovingFromCart ? (
+                        <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        "−"
+                      )}
+                    </button>
 
                     <span>{item.qty}</span>
 
@@ -88,7 +100,15 @@ export default function CartDrawer() {
               <span>₹ {total.toLocaleString("en-IN")}</span>
             </div>
 
-            <button className="w-full bg-black text-white py-3 text-sm font-medium">CHECKOUT</button>
+            <button 
+              onClick={() => {
+                closeCart();
+                router.push('/checkout');
+              }}
+              className="w-full bg-black text-white py-3 text-sm font-medium"
+            >
+              CHECKOUT
+            </button>
 
             <p className="text-xs text-gray-400 mt-2 text-center">
               Shipping charges will be displayed in checkout

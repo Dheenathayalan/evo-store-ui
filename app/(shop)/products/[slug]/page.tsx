@@ -8,7 +8,7 @@ import { useCart } from "@/store/cart";
 
 export default function ProductDetails() {
   const { slug } = useParams<{ slug: string }>();
-  const { openCart, addItem } = useCart();
+  const { openCart, addItemToCart, isAddingToCart } = useCart();
 
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -17,7 +17,6 @@ export default function ProductDetails() {
   const [color, setColor] = useState<string>(""); // color name, matches variant.color
   const [hoveredColor, setHoveredColor] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [isAddingToCart, setIsAddingToCart] = useState(false);
   const carouselRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -256,31 +255,15 @@ export default function ProductDetails() {
                   return;
                 }
                 
-                setIsAddingToCart(true);
                 try {
                   // Use the selected variant's SKU
                   const sku = activeVariant?.sku || `${product._id || product.id}-${color}-${size}`;
-                  const res = await addToCart(sku, quantity);
-                  
-                  // Add to local cart store
-                  const cartItem = {
-                    id: Date.now(),
-                    name: product.title,
-                    price: displayPrice,
-                    qty: quantity,
-                    image: images[0] || "/images/placeholder.jpg",
-                    color,
-                    size,
-                    sku,
-                  };
-                  addItem(cartItem);
+                  await addItemToCart(sku, quantity);
                   
                   // Open cart drawer
                   openCart();
                 } catch (err: any) {
                   alert(err?.message || "Failed to add to cart");
-                } finally {
-                  setIsAddingToCart(false);
                 }
               }}
               disabled={isAddingToCart || variantStock === 0}

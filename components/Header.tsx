@@ -13,6 +13,7 @@ import { searchProducts } from "@/lib/api/products";
 export default function Header() {
   const isLoggedIn = useAuth((s) => s.isLoggedIn)();
   const { openCart, fetchCartItems } = useCart();
+  const cartItemCount = useCart((state) => state.items.reduce((total, item) => total + item.qty, 0));
   const router = useRouter();
   const pathname = usePathname();
 
@@ -176,8 +177,13 @@ export default function Header() {
             </button>
 
             {/* Cart */}
-            <button onClick={openCart} className="flex items-center justify-center hover:opacity-70 transition-opacity">
+            <button onClick={openCart} className="relative flex items-center justify-center hover:opacity-70 transition-opacity">
               <ShoppingCart size={20} />
+              {cartItemCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                  {cartItemCount > 99 ? '99+' : cartItemCount}
+                </span>
+              )}
             </button>
 
             {/* Profile — desktop only */}
