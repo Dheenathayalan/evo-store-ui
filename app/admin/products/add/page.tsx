@@ -3,8 +3,12 @@
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState, useEffect } from "react";
-import { createProduct } from "@/lib/api/products";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { createProduct, updateProduct, getProductBySlug } from "@/lib/api/products";
+import { useAuth } from "@/store/auth";
+
+export const dynamic = 'force-dynamic';
 
 /* ------------------ SCHEMA ------------------ */
 const schema = z.object({
@@ -16,6 +20,7 @@ const schema = z.object({
     .string()
     .min(1, "Price required")
     .refine((val) => !isNaN(Number(val)), { message: "Must be a number" }),
+  showInLanding: z.boolean().optional(),
 });
 
 const brands = ["YourBrand", "Nike", "Adidas"];
@@ -24,11 +29,28 @@ const sizesList = ["S", "M", "L", "XL"];
 
 /* ------------------ PAGE ------------------ */
 export default function AddProductPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#f6f6f6]" />}>
+      <AddProductContent />
+    </Suspense>
+  );
+}
+
+/* ------------------ CONTENT (with hooks) ------------------ */
+function AddProductContent() {
+  const router = useRouter();
+  const { isLoggedIn, isAdmin } = useAuth();
+  const [mounted, setMounted] = useState(false);
+
+  const searchParams = useSearchParams();
+  const editSlug = searchParams.get("edit"); // Get edit slug from query params
+  
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm({ resolver: zodResolver(schema) });
+    setValue,
+  } = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema) });
 
   const [sizes, setSizes] = useState<string[]>([]);
   const [colors, setColors] = useState<any[]>([]);
@@ -38,6 +60,100 @@ export default function AddProductPage() {
   const [images, setImages] = useState<string[]>([]);
   const [thumbnail, setThumbnail] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingProduct, setIsLoadingProduct] = useState(!!editSlug);
+
+  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (mounted && (!isLoggedIn() || !isAdmin)) {
+      router.replace("/login");
+    }
+  }, [mounted, isLoggedIn, isAdmin, router]);
+
+  // Load product data if editing
+  useEffect(() => {
+    if (!editSlug) return;
+    const loadProduct = async () => {
+      try {
+        const res: any = await getProductBySlug(editSlug);
+        const data = res?.data ?? res;
+        
+        // Populate form fields
+        setValue("title", data.title);
+        setValue("brand", data.brand);
+        setValue("category", data.category);
+        setValue("description", data.description);
+        setValue("base_price", String(data.base_price)); // Convert number to string for form
+        setValue("showInLanding", data.showInLanding || false);
+        
+        // Set colors
+        if (data.attributes?.colors) {
+          setColors(data.attributes.colors);
+        }
+        
+        // Set sizes
+        if (data.attributes?.sizes) {
+          setSizes(data.attributes.sizes);
+        }
+        
+        // Set images
+        if (data.images) {
+          setImages(data.images);
+        }
+        
+        // Set thumbnail
+        if (data.thumbnail) {
+          setThumbnail(data.thumbnail);
+        }
+        
+        // Generate variants
+        if (data.attributes?.sizes && data.attributes?.colors) {
+          const newVariants = [];
+          for (const size of data.attributes.sizes) {
+            for (const color of data.attributes.colors) {
+              const existing = data.variants?.find((v: any) => v.size === size && v.color === color.name);
+              newVariants.push({ size, color: color.name, stock: existing?.stock || 0, price: existing?.price || 0 });
+            }
+          }
+          setVariants(newVariants);
+          setVariantErrors(new Array(newVariants.length).fill(false));
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Failed to load product");
+      } finally {
+        setIsLoadingProduct(false);
+      }
+    };
+    loadProduct();
+  }, [editSlug, setValue]);
+
+  /* ------------------ VARIANTS ------------------ */
+  useEffect(() => {
+    if (sizes.length === 0 || colors.length === 0) { setVariants([]); return; }
+    const newVariants: any[] = [];
+    sizes.forEach((size) => {
+      colors.forEach((color) => {
+        const existing = variants.find((v) => v.size === size && v.color === color.name);
+        newVariants.push({ size, color: color.name, stock: existing?.stock || 0, price: existing?.price || 0 });
+      });
+    });
+    setVariants(newVariants);
+  }, [sizes, colors]);
+
+  // Prevent flicker: show blank background until hydration is finished
+  if (!mounted) {
+    return <div className="min-h-screen bg-[#f6f6f6]" />;
+  }
+
+  // Show spinner only during auth check or product fetching
+  if ((!isLoggedIn() || !isAdmin) || isLoadingProduct) {
+    return (
+      <div className="min-h-screen bg-[#f6f6f6] flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-gray-300 border-t-black rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   /* ------------------ SIZE ------------------ */
   const toggleSize = (size: string) =>
@@ -62,18 +178,6 @@ export default function AddProductPage() {
     setThumbnail(URL.createObjectURL(file));
   };
 
-  /* ------------------ VARIANTS ------------------ */
-  useEffect(() => {
-    if (sizes.length === 0 || colors.length === 0) { setVariants([]); return; }
-    const newVariants: any[] = [];
-    sizes.forEach((size) => {
-      colors.forEach((color) => {
-        const existing = variants.find((v) => v.size === size && v.color === color.name);
-        newVariants.push({ size, color: color.name, stock: existing?.stock || 0, price: existing?.price || 0 });
-      });
-    });
-    setVariants(newVariants);
-  }, [sizes, colors]);
 
   const updateVariant = (index: number, key: "stock" | "price", value: number) => {
     const safeValue = Math.max(0, value);
@@ -95,12 +199,19 @@ export default function AddProductPage() {
         category: data.category,
         description: data.description,
         base_price: Number(data.base_price),
+        showInLanding: data.showInLanding || false,
         attributes: { colors: colors.map((c) => ({ name: c.name, value: c.value })), sizes },
         variants: variants.map((v) => ({ color: v.color, size: v.size, price: Number(v.price), stock: Number(v.stock) })),
       };
-      const res = await createProduct(payload);
+      let res;
+      if (editSlug) {
+        res = await updateProduct(editSlug, payload);
+        alert("Product updated successfully 🚀");
+      } else {
+        res = await createProduct(payload);
+        alert("Product created successfully 🚀");
+      }
       console.log("SUCCESS", res);
-      alert("Product created successfully 🚀");
     } catch (err: any) {
       console.error(err);
       alert(err.message);
@@ -113,7 +224,7 @@ export default function AddProductPage() {
   return (
     <div className="min-h-screen bg-[#f6f6f6] p-4 sm:p-6 md:p-10">
       <div className="max-w-6xl mx-auto bg-white p-4 sm:p-6 md:p-10 shadow-sm rounded">
-        <h1 className="text-xl sm:text-2xl font-semibold mb-6 sm:mb-8">Add Product</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold mb-6 sm:mb-8">{editSlug ? "Edit Product" : "Add Product"}</h1>
 
         <form
           onSubmit={(e) => { e.preventDefault(); handleSubmit(onSubmit)(e); }}
@@ -146,6 +257,10 @@ export default function AddProductPage() {
 
             <Field label="Description" error={errors.description?.message}>
               <textarea {...register("description")} className="input h-28" />
+            </Field>
+
+            <Field label="Show in Landing">
+              <input type="checkbox" {...register("showInLanding")} className="w-4 h-4" />
             </Field>
 
             <div>

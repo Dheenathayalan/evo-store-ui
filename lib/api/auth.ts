@@ -21,3 +21,20 @@ export interface LoginPayload {
 export const login = (payload: LoginPayload) => {
   return api.post("/auth/login", payload);
 };
+
+export interface ResetPasswordPayload {
+  email: string;
+  link: string;
+}
+
+export const resetPassword = (payload: ResetPasswordPayload) => {
+  return api.post("/auth/reset-password", payload);
+};
+
+export const verifyResetToken = (token: string) => {
+  return api.get(`/auth/verify-token?token=${token}`);
+};
+
+export const confirmPasswordReset = (payload: { userid: string; password: string }) => {
+  return api.post("/auth/reset-password-confirm", payload);
+};

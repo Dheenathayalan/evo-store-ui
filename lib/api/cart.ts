@@ -28,7 +28,7 @@ export const getCart = async () => {
     params.user_id = userId;
   }
   
-  return api.get("/cart", {
+  return api.get("/cart/", {
     params,
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });

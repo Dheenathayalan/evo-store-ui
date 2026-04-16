@@ -42,34 +42,34 @@ export default function Footer(props: any) {
         <div className="grid grid-cols-2 gap-10 text-sm">
           <div className="space-y-3 text-gray-300">
             <p>
-              <Link href="#">OUR STORY</Link>
+              <Link href="/our-story" className="hover:text-white transition-colors">OUR STORY</Link>
             </p>
             <p>
-              <Link href="#">IMPACT</Link>
+              <Link href="/impact" className="hover:text-white transition-colors">IMPACT</Link>
             </p>
             <p>
-              <Link href="#">BLOGS</Link>
+              <Link href="/blogs" className="hover:text-white transition-colors">BLOGS</Link>
             </p>
             <p>
-              <Link href="#">FAQS</Link>
+              <Link href="/faqs" className="hover:text-white transition-colors">FAQS</Link>
             </p>
             <p>
-              <Link href="#">PRIVACY POLICY</Link>
+              <Link href="/privacy-policy" className="hover:text-white transition-colors">PRIVACY POLICY</Link>
             </p>
           </div>
 
           <div className="space-y-3 text-gray-300">
             <p>
-              <Link href="#">RETURN</Link>
+              <Link href="/return-policy" className="hover:text-white transition-colors">RETURN</Link>
             </p>
             <p>
               <Link href="#">TERMS</Link>
             </p>
             <p>
-              <Link href="#">SHIPPING</Link>
+              <Link href="/shipping-policy" className="hover:text-white transition-colors">SHIPPING</Link>
             </p>
             <p>
-              <Link href="#">CONTACT US</Link>
+              <Link href="/contact-us" className="hover:text-white transition-colors">CONTACT US</Link>
             </p>
           </div>
         </div>

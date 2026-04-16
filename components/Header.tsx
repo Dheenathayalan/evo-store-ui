@@ -70,7 +70,7 @@ export default function Header() {
     if (!search.trim()) { setResults([]); return; }
     setLoading(true);
     try {
-      const res: any = await searchProducts(search.trim(), 2);
+      const res: any = await searchProducts(search.trim(), 4);
       setResults(Array.isArray(res) ? res : res?.data || []);
     } catch { setResults([]); }
     finally { setLoading(false); }

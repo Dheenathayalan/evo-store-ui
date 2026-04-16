@@ -1,14 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { getProductBySlug } from "@/lib/api/products";
 import { addToCart } from "@/lib/api/cart";
 import { useCart } from "@/store/cart";
+import { useAuth } from "@/store/auth";
+import { Edit2 } from "lucide-react";
 
 export default function ProductDetails() {
   const { slug } = useParams<{ slug: string }>();
+  const router = useRouter();
   const { openCart, addItemToCart, isAddingToCart } = useCart();
+  const { isAdmin } = useAuth();
 
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -274,7 +278,16 @@ export default function ProductDetails() {
               )}
               {isAddingToCart ? "ADDING..." : "ADD TO CART"}
             </button>
-            <button className="flex-1 border border-black py-3 text-sm font-medium">BUY</button>
+            {isAdmin && (
+              <button 
+                onClick={() => router.push(`/admin/products/add?edit=${slug}`)}
+                className="flex-1 border border-black py-3 text-sm font-medium flex items-center justify-center gap-2 hover:bg-gray-100 transition"
+              >
+                <Edit2 size={16} />
+                EDIT
+              </button>
+            )}
+            {!isAdmin && <button className="flex-1 border border-black py-3 text-sm font-medium">BUY</button>}
           </div>
 
           <p className="text-xs text-gray-600 mb-6">

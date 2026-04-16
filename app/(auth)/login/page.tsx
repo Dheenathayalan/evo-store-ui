@@ -37,8 +37,9 @@ export default function LoginPage() {
       // Accept token as res.token or res.access_token
       const token = res?.token ?? res?.access_token ?? "";
       const user = res?.user ?? res?.data ?? {};
+      const isAdmin = res?.isAdmin ?? false;
 
-      setAuth(token, user);
+      setAuth(token, user, isAdmin);
       router.push("/profile");
     } catch (err: any) {
       setError(typeof err === "string" ? err : "Invalid email or password.");

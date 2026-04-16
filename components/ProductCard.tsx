@@ -1,11 +1,14 @@
 "use client";
 
-import { useCart } from "@/store/cart";
+import { useAuth } from "@/store/auth";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Edit2 } from "lucide-react";
 
 export default function ProductCard({ product, index }: any) {
-  const { openCart, addItemToCart, isAddingToCart } = useCart();
+  const { isAdmin } = useAuth();
+  const router = useRouter();
 
   // ── Field mapping (API shape) ──────────────────────────────────
   const name: string  = product.title  ?? product.name  ?? "";
@@ -16,25 +19,6 @@ export default function ProductCard({ product, index }: any) {
     product.image ??
     "";
   // ──────────────────────────────────────────────────────────────
-
-  const addToCart = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-
-    try {
-      // Use first available variant or create a default SKU
-      const firstVariant = product.variants?.[0];
-      const sku = firstVariant?.sku || `${product._id || product.id}-default-default`;
-      const quantity = 1;
-
-      // Call cart store method (handles API call and loading state)
-      await addItemToCart(sku, quantity);
-
-      // Open cart drawer
-      openCart();
-    } catch (err: any) {
-      alert(err?.message || "Failed to add to cart");
-    }
-  };
 
   return (
     <Link href={`/products/${product.slug ?? product._id ?? product.id}`}>
@@ -62,25 +46,27 @@ export default function ProductCard({ product, index }: any) {
             </div>
           )}
 
-          {/* Hover Overlay */}
-          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center">
-            <button
-              onClick={addToCart}
-              disabled={isAddingToCart}
-              className="border border-white px-6 py-2 text-white tracking-widest hover:bg-white hover:text-black transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {isAddingToCart && (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              )}
-              {isAddingToCart ? "ADDING..." : "ADD TO CART"}
-            </button>
-          </div>
+          {/* Hover Overlay - Only for Admins now that Add to Cart is removed */}
+          {isAdmin && (
+            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center gap-3">
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  router.push(`/admin/products/add?edit=${product.slug ?? product._id}`);
+                }}
+                className="border border-white px-4 py-2 text-white tracking-widest hover:bg-white hover:text-black transition flex items-center gap-2"
+              >
+                <Edit2 size={16} />
+                EDIT
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Bottom Info */}
-        <div className="flex justify-between items-center mt-3 bg-white px-4 py-3">
-          <p className="text-sm tracking-widest">{name}</p>
-          <p className="text-sm">₹ {price.toLocaleString("en-IN")}</p>
+        <div className="flex justify-between items-center mt-3 bg-white px-4 py-3 gap-4">
+          <p className="text-sm tracking-widest truncate flex-1" title={name}>{name}</p>
+          <p className="text-sm shrink-0">₹ {price.toLocaleString("en-IN")}</p>
         </div>
       </motion.div>
     </Link>

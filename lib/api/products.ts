@@ -1,4 +1,5 @@
 import api from "./client";
+import { useAuth } from "@/store/auth";
 
 export const createProduct = (payload: any) => {
   return api.post("/products", payload);
@@ -18,4 +19,11 @@ export const searchProducts = (search: string, limit: number = 10, cursor?: stri
 
 export const getProductBySlug = (slug: string) => {
   return api.get(`/products/${slug}`);
+};
+
+export const updateProduct = (slug: string, payload: any) => {
+  const { token } = useAuth.getState();
+  return api.put(`/products/${slug}`, payload, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
 };

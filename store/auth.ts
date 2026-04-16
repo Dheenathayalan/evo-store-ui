@@ -14,7 +14,8 @@ interface User {
 interface AuthState {
   token: string | null;
   user: User | null;
-  setAuth: (token: string, user: User) => void;
+  isAdmin: boolean;
+  setAuth: (token: string, user: User, isAdmin?: boolean) => void;
   logout: () => void;
   isLoggedIn: () => boolean;
 }
@@ -24,10 +25,11 @@ export const useAuth = create<AuthState>()(
     (set, get) => ({
       token: null,
       user: null,
+      isAdmin: false,
 
-      setAuth: (token, user) => set({ token, user }),
+      setAuth: (token, user, isAdmin = false) => set({ token, user, isAdmin }),
 
-      logout: () => set({ token: null, user: null }),
+      logout: () => set({ token: null, user: null, isAdmin: false }),
 
       isLoggedIn: () => !!get().token,
     }),
