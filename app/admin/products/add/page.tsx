@@ -276,7 +276,7 @@ function AddProductContent() {
         landing_thumbnail: finalThumbnail,
       };
 
-      let res;
+      let res: any;
       if (editSlug) {
         res = await updateProduct(editSlug, payload);
         setImageFiles([]); // Clear pending files, keep saved URLs
@@ -285,7 +285,8 @@ function AddProductContent() {
         setTimeout(() => setSuccessMsg(null), 4000);
       } else {
         res = await createProduct(payload);
-        const newSlug = res?.data?.slug ?? res?.slug;
+        const data = res?.data ?? res;
+        const newSlug = data?.slug;
         setSuccessMsg("Product created successfully ✓");
         setTimeout(() => setSuccessMsg(null), 4000);
         if (newSlug) router.replace(`/admin/products/add?edit=${newSlug}`);
