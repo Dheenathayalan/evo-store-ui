@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Upload, X, Loader2 } from "lucide-react";
-import { uploadImage } from "@/lib/api/upload";
+import { getPresignedUrl, uploadFileToS3 } from "@/lib/api/upload";
 
 interface ImageUploadProps {
   value: string[];
@@ -30,8 +30,16 @@ export default function ImageUpload({
       const newUrls: string[] = [];
       for (let i = 0; i < files.length; i++) {
         if (value.length + newUrls.length >= maxImages) break;
-        const url = await uploadImage(files[i]);
-        newUrls.push(url);
+        const file = files[i];
+        
+        // 1. Get presigned URL
+        const res: any = await getPresignedUrl(file.name, file.type, "new", "images");
+        const { upload_url, file_url } = res.data ?? res;
+
+        // 2. Upload to S3
+        await uploadFileToS3(upload_url, file);
+        
+        newUrls.push(file_url);
       }
       onChange([...value, ...newUrls]);
     } catch (error) {
