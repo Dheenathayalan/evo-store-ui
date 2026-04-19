@@ -1,4 +1,5 @@
 import axios from "axios";
+import { useAuth } from "@/store/auth";
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -7,6 +8,19 @@ const api = axios.create({
   },
   timeout: 10000,
 });
+
+// 🚀 Request interceptor - adds token
+api.interceptors.request.use(
+  (config) => {
+    // We use getState() here since interceptors are outside React context
+    const token = useAuth.getState().token;
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 // 🔥 Response interceptor
 api.interceptors.response.use(

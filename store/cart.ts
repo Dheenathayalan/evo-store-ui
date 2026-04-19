@@ -22,13 +22,14 @@ interface CartState {
   isRemovingFromCart: boolean;
   openCart: () => void;
   closeCart: () => void;
-  increaseQty: (id: string) => void;
+  increaseQty: (id: string) => Promise<void>;
   decreaseQty: (id: string) => void;
   removeItem: (id: string) => Promise<void>;
   addItemToCart: (sku: string, quantity: number) => Promise<void>;
   addItem: (item: CartItem) => void;
   setItems: (items: CartItem[]) => void;
   fetchCartItems: () => Promise<void>;
+  clearCart: () => void;
 }
 
 export const useCart = create<CartState>((set) => ({
@@ -41,12 +42,18 @@ export const useCart = create<CartState>((set) => ({
   openCart: () => set({ isOpen: true }),
   closeCart: () => set({ isOpen: false }),
 
-  increaseQty: (id: string) =>
-    set((state: any) => ({
-      items: state.items.map((item: any) =>
-        item.id === id ? { ...item, qty: item.qty + 1 } : item,
-      ),
-    })),
+  increaseQty: async (id: string) => {
+    const state = useCart.getState();
+    const item = state.items.find((i: any) => i.id === id);
+    if (!item) return;
+    try {
+      await addToCart(item.sku, 1);
+      await state.fetchCartItems();
+    } catch (err: any) {
+      const msg = err?.response?.data?.detail || "Cannot add more — stock limit reached";
+      alert(msg);
+    }
+  },
 
   decreaseQty: async (id: string) => {
     const state = useCart.getState();
@@ -116,13 +123,13 @@ export const useCart = create<CartState>((set) => ({
 
       // Map API response to cart item structure
       const cartItems: CartItem[] = apiItems.map((item: any) => ({
-        id: item.sku, // Use SKU as the unique identifier
+        id: item.sku,
         name: item.title,
         price: item.price_snapshot,
         qty: item.quantity,
-        image: "/images/placeholder.jpg", // Default placeholder image
-        color: item.color || "Default", // Use color from API
-        size: item.size || "Default", // Use size from API
+        image: item.image || "/images/placeholder.jpg",
+        color: item.color || "Default",
+        size: item.size || "Default",
         sku: item.sku,
       }));
 
@@ -132,4 +139,5 @@ export const useCart = create<CartState>((set) => ({
       set({ isLoading: false });
     }
   },
+  clearCart: () => set({ items: [] }),
 }));

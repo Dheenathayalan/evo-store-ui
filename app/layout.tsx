@@ -30,11 +30,6 @@ export default function RootLayout({
         <Footer />
         <CartDrawer />
 
-        {/* Razorpay Script */}
-        <Script
-          src="https://checkout.razorpay.com/v1/checkout.js"
-          strategy="beforeInteractive"
-        />
       </body>
     </html>
   );

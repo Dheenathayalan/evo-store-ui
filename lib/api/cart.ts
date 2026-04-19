@@ -4,10 +4,10 @@ import { useAuth } from "@/store/auth";
 // Generate or retrieve a persistent UUID for guest users
 const getGuestUserId = (): string => {
   const key = "evo_guest_user_id";
+  if (typeof window === "undefined") return "server";
   let userId = localStorage.getItem(key);
   
   if (!userId) {
-    // Generate a simple UUID-like string
     userId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
       const r = Math.random() * 16 | 0;
       const v = c === 'x' ? r : (r & 0x3 | 0x8);
@@ -20,49 +20,32 @@ const getGuestUserId = (): string => {
 };
 
 export const getCart = async () => {
-  const { token } = useAuth.getState();
-  const userId = token ? undefined : getGuestUserId(); // Only pass user_id if no token
-  
-  const params: any = {};
-  if (userId) {
-    params.user_id = userId;
-  }
+  const { isLoggedIn } = useAuth.getState();
+  const userId = !isLoggedIn() ? getGuestUserId() : undefined;
   
   return api.get("/cart/", {
-    params,
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    params: userId ? { user_id: userId } : {},
   });
 };
 
 export const addToCart = async (sku: string, quantity: number) => {
-  const { token } = useAuth.getState();
-  const userId = token ? undefined : getGuestUserId(); // Only pass user_id if no token
+  const { isLoggedIn } = useAuth.getState();
+  const body: any = { sku, quantity };
+  if (!isLoggedIn()) body.user_id = getGuestUserId();
   
-  const body: any = {
-    sku,
-    quantity,
-  };
-  
-  if (userId) {
-    body.user_id = userId;
-  }
-  
-  return api.post("/cart/add", body, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
+  return api.post("/cart/add", body);
 };
 
 export const removeFromCart = async (sku: string) => {
-  const { token } = useAuth.getState();
-  const userId = token ? undefined : getGuestUserId(); // Only pass user_id if no token
+  const { isLoggedIn } = useAuth.getState();
+  const params = !isLoggedIn() ? { user_id: getGuestUserId() } : {};
   
-  const params: any = {};
-  if (userId) {
-    params.user_id = userId;
-  }
+  return api.delete(`/cart/${sku}`, { params });
+};
+
+export const clearCartApi = async () => {
+  const { isLoggedIn } = useAuth.getState();
+  const params = !isLoggedIn() ? { user_id: getGuestUserId() } : {};
   
-  return api.delete(`/cart/${sku}`, {
-    params,
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
+  return api.delete("/cart/clear", { params });
 };

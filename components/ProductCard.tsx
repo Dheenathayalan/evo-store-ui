@@ -1,14 +1,9 @@
 "use client";
 
-import { useAuth } from "@/store/auth";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Edit2 } from "lucide-react";
 
 export default function ProductCard({ product, index }: any) {
-  const { isAdmin } = useAuth();
-  const router = useRouter();
 
   // ── Field mapping (API shape) ──────────────────────────────────
   const name: string  = product.title  ?? product.name  ?? "";
@@ -46,21 +41,6 @@ export default function ProductCard({ product, index }: any) {
             </div>
           )}
 
-          {/* Hover Overlay - Only for Admins now that Add to Cart is removed */}
-          {isAdmin && (
-            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center gap-3">
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  router.push(`/admin/products/add?edit=${product.slug ?? product._id}`);
-                }}
-                className="border border-white px-4 py-2 text-white tracking-widest hover:bg-white hover:text-black transition flex items-center gap-2"
-              >
-                <Edit2 size={16} />
-                EDIT
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Bottom Info */}

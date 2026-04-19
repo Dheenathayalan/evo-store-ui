@@ -4,31 +4,39 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Footer from "@/components/Footer";
 
-const sections = [
-  {
-    title: "URBAN STYLE",
-    image: "/images/slide1.jpg",
-    link: "/products/1",
-  },
-  {
-    title: "MINIMAL WEAR",
-    image: "/images/slide2.jpg",
-    link: "/products/2",
-  },
-  {
-    title: "PREMIUM LOOK",
-    image: "/images/slide3.jpg",
-    link: "/products/3",
-  },
-  {
-    type: "footer", // 👈 special type
-  },
-];
+import { getLandingProducts } from "@/lib/api/products";
 
 export default function Home() {
+  const [sections, setSections] = useState<any[]>([]);
   const [current, setCurrent] = useState(0);
   const [prev, setPrev] = useState<number | null>(null);
   const [direction, setDirection] = useState<"up" | "down">("up");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLandingProducts = async () => {
+      try {
+        const res: any = await getLandingProducts(5);
+        const products = res?.data ?? res;
+        
+        const mappedSections = products.map((product: any) => ({
+          title: product.title,
+          image: product.landing_thumbnail || product.images?.[0] || "/images/placeholder.jpg",
+          link: `/products/${product.slug}`
+        }));
+
+        setSections([...mappedSections, { type: "footer" }]);
+      } catch (err) {
+        console.error("Failed to fetch landing products:", err);
+        // Fallback or empty sections
+        setSections([{ type: "footer" }]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLandingProducts();
+  }, []);
 
   const isAnimating = useRef(false);
   const delta = useRef(0);
@@ -106,18 +114,18 @@ export default function Home() {
 
   useEffect(() => {
     const isMobile = "ontouchstart" in window;
-    
+
     // Wheel events only for desktop/web
     if (!isMobile) {
       window.addEventListener("wheel", handleScroll, { passive: true });
     }
-    
+
     // Touch events only for mobile devices
     if (isMobile) {
       window.addEventListener("touchstart", handleTouchStart as EventListener, { passive: true });
       window.addEventListener("touchend", handleTouchEnd as EventListener, { passive: true });
     }
-    
+
     return () => {
       if (!isMobile) {
         window.removeEventListener("wheel", handleScroll);
@@ -127,7 +135,7 @@ export default function Home() {
         window.removeEventListener("touchend", handleTouchEnd as EventListener);
       }
     };
-  }, [current]);
+  }, [current, sections]);
 
   useEffect(() => {
     document.body.classList.add("landing-no-scroll");
@@ -137,10 +145,22 @@ export default function Home() {
     };
   }, []);
 
+  if (loading) {
+    return (
+      <div className="h-[calc(100vh-52px)] w-full flex items-center justify-center bg-black">
+        <div className="w-8 h-8 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (sections.length === 0) {
+    return null;
+  }
+
   return (
     <main className="relative h-[calc(100vh-52px)] w-full overflow-hidden">
       {/* Previous Section (stays below) */}
-      {prev !== null && (
+      {prev !== null && sections[prev] && (
         <div className="section z-10">
           <Slide section={sections[prev]} />
         </div>
@@ -149,11 +169,10 @@ export default function Home() {
       {/* Current Section (reveals on top) */}
       <div
         key={current + direction} // 🔥 ensures animation runs every time
-        className={`section z-20 ${
-          direction === "down" ? "reveal-from-bottom" : "reveal-from-top"
-        }`}
+        className={`section z-20 ${direction === "down" ? "reveal-from-bottom" : "reveal-from-top"
+          }`}
       >
-        <Slide section={sections[current]} />
+        {sections[current] && <Slide section={sections[current]} />}
       </div>
     </main>
   );
@@ -173,7 +192,7 @@ function Slide({ section }: any) {
 
   // 👇 NORMAL SLIDE
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full group">
       <img
         src={section.image}
         alt={section.title}
@@ -181,14 +200,23 @@ function Slide({ section }: any) {
       />
 
       {/* Overlay */}
-      <div className="absolute inset-0 bg-black/30" />
+      <div className="absolute inset-0 bg-black/30 transition-colors duration-500" />
 
-      {/* Clickable */}
-      <Link href={section.link} className="absolute inset-0 z-10" />
+      {/* Title - Bottom Left */}
+      <div className="absolute bottom-16 left-8 sm:left-16 z-20 text-white">
+        <p className="text-sm sm:text-base font-light tracking-[0.5em] uppercase">
+          {section.title}
+        </p>
+      </div>
 
-      {/* Text */}
-      <div className="absolute bottom-16 left-16 text-white z-20">
-        <p style={{ letterSpacing: "4px" }}>{section.title}</p>
+      {/* SHOP NOW - Center Bottom */}
+      <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20">
+        <Link
+          href={section.link}
+          className="border border-white/30 px-10 py-4 text-[10px] tracking-[0.4em] font-medium text-white/60 transition-all duration-300 hover:bg-white hover:text-black hover:border-white uppercase whitespace-nowrap"
+        >
+          SHOP NOW
+        </Link>
       </div>
     </div>
   );

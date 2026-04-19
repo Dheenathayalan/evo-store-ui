@@ -4,7 +4,7 @@ import { useCart } from "@/store/cart";
 import { useRouter } from "next/navigation";
 
 export default function CartDrawer() {
-  const { isOpen, closeCart, items, increaseQty, decreaseQty, isLoading, isRemovingFromCart } = useCart();
+  const { isOpen, closeCart, items, increaseQty, decreaseQty, removeItem, isLoading, isRemovingFromCart } = useCart();
   const router = useRouter();
 
   const total = items.reduce(
@@ -58,10 +58,31 @@ export default function CartDrawer() {
           ) : (
             items.map((item: any) => (
               <div key={item.sku || item.id} className="flex gap-4">
-                <img src={item.image} className="w-20 h-24 object-cover flex-shrink-0" />
+                {item.image && !item.image.includes("placeholder") ? (
+                  <img src={item.image} className="w-20 h-24 object-cover flex-shrink-0 bg-gray-50" />
+                ) : (
+                  <div className="w-20 h-24 flex-shrink-0 bg-gray-100 flex flex-col items-center justify-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span className="text-[9px] text-gray-300 uppercase tracking-wider">No Image</span>
+                  </div>
+                )}
 
                 <div className="flex-1 text-sm">
-                  <p className="font-medium">{item.name}</p>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-medium leading-snug">{item.name}</p>
+                    <button
+                      onClick={() => removeItem(item.id)}
+                      disabled={isRemovingFromCart}
+                      className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0 mt-0.5 disabled:opacity-40"
+                      title="Remove item"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
                   <p className="text-gray-500 text-xs">
                     {item.color} / {item.size}
                   </p>
@@ -82,7 +103,10 @@ export default function CartDrawer() {
 
                     <span>{item.qty}</span>
 
-                    <button onClick={() => increaseQty(item.id)} className="cursor-pointer">+</button>
+                    <button 
+                      onClick={() => increaseQty(item.id)}
+                      className="cursor-pointer"
+                    >+</button>
                   </div>
 
                   <p className="mt-2">₹ {(item.price * item.qty).toLocaleString("en-IN")}</p>

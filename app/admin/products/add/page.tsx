@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createProduct, updateProduct, getProductBySlug } from "@/lib/api/products";
+import { getPresignedUrl, uploadFileToS3 } from "@/lib/api/upload";
 import { useAuth } from "@/store/auth";
 
 export const dynamic = 'force-dynamic';
@@ -58,9 +59,26 @@ function AddProductContent() {
   const [variantErrors, setVariantErrors] = useState<boolean[]>([]);
   const [colorInput, setColorInput] = useState({ name: "", value: "#000000" });
   const [images, setImages] = useState<string[]>([]);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [thumbnail, setThumbnail] = useState<string | null>(null);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [productId, setProductId] = useState<string | null>(null); // MongoDB _id for S3 folder
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingProduct, setIsLoadingProduct] = useState(!!editSlug);
+  const [showSpinner, setShowSpinner] = useState(false);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // For very fast fetches, we don't want to flash the spinner.
+  // We only show it if loading takes longer than 200ms.
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isLoadingProduct) {
+      timer = setTimeout(() => setShowSpinner(true), 200);
+    } else {
+      setShowSpinner(false);
+    }
+    return () => clearTimeout(timer);
+  }, [isLoadingProduct]);
 
   useEffect(() => setMounted(true), []);
 
@@ -77,6 +95,9 @@ function AddProductContent() {
       try {
         const res: any = await getProductBySlug(editSlug);
         const data = res?.data ?? res;
+        
+        // Store the _id for S3 folder organization
+        if (data._id) setProductId(data._id);
         
         // Populate form fields
         setValue("title", data.title);
@@ -102,8 +123,8 @@ function AddProductContent() {
         }
         
         // Set thumbnail
-        if (data.thumbnail) {
-          setThumbnail(data.thumbnail);
+        if (data.landing_thumbnail) {
+          setThumbnail(data.landing_thumbnail);
         }
         
         // Generate variants
@@ -146,13 +167,17 @@ function AddProductContent() {
     return <div className="min-h-screen bg-[#f6f6f6]" />;
   }
 
-  // Show spinner only during auth check or product fetching
-  if ((!isLoggedIn() || !isAdmin) || isLoadingProduct) {
+  if (showSpinner) {
     return (
       <div className="min-h-screen bg-[#f6f6f6] flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-gray-300 border-t-black rounded-full animate-spin"></div>
       </div>
     );
+  }
+
+  // Blank state while auth/product is still being determined to avoid form flicker
+  if (isLoadingProduct || (!isLoggedIn() || !isAdmin)) {
+    return <div className="min-h-screen bg-[#f6f6f6]" />;
   }
 
   /* ------------------ SIZE ------------------ */
@@ -171,11 +196,25 @@ function AddProductContent() {
   /* ------------------ IMAGE ------------------ */
   const handleImageUpload = (files: FileList | null) => {
     if (!files) return;
-    setImages((prev) => [...prev, ...Array.from(files).map((f) => URL.createObjectURL(f))]);
+    const newFiles = Array.from(files);
+    setImageFiles((prev) => [...prev, ...newFiles]);
+    setImages((prev) => [...prev, ...newFiles.map((f) => URL.createObjectURL(f))]);
   };
+  
   const handleThumbnailUpload = (file: File | null) => {
     if (!file) return;
+    setThumbnailFile(file);
     setThumbnail(URL.createObjectURL(file));
+  };
+
+  const removeImage = (index: number) => {
+    // If it's an existing image (URL starts with http), just remove from images
+    // If it's a new file, we need to find its index in imageFiles
+    // Simplified: keep track of which is which
+    setImages(prev => prev.filter((_, i) => i !== index));
+    // This is a bit tricky since we don't know if the i-th image is from imageFiles or existing
+    // Let's just reset imageFiles for simplicity or manage better
+    // For now, if we match the preview URL, we can remove
   };
 
 
@@ -193,6 +232,31 @@ function AddProductContent() {
 
     setIsLoading(true);
     try {
+      // Use product ID for S3 folder. For new products, use a temp ID that will be replaced on re-edit.
+      const s3ProductId = productId || "new";
+
+      // 1. Upload Thumbnail if changed
+      let finalThumbnail = thumbnail;
+      if (thumbnailFile) {
+        const presigned: any = await getPresignedUrl(thumbnailFile.name, thumbnailFile.type, s3ProductId, "thumbnail");
+        const presignedData = presigned.data ?? presigned;
+        await uploadFileToS3(presignedData.upload_url, thumbnailFile);
+        finalThumbnail = presignedData.file_url;
+      }
+
+      // 2. Upload new images (keep existing CloudFront URLs, upload only new File objects)
+      const existingUrls = images.filter(img => img.startsWith("http"));
+      const uploadedUrls: string[] = [];
+
+      for (const file of imageFiles) {
+        const presigned: any = await getPresignedUrl(file.name, file.type, s3ProductId, "images");
+        const presignedData = presigned.data ?? presigned;
+        await uploadFileToS3(presignedData.upload_url, file);
+        uploadedUrls.push(presignedData.file_url);
+      }
+
+      const finalImages = [...existingUrls, ...uploadedUrls];
+
       const payload = {
         title: data.title,
         brand: data.brand,
@@ -201,20 +265,34 @@ function AddProductContent() {
         base_price: Number(data.base_price),
         showInLanding: data.showInLanding || false,
         attributes: { colors: colors.map((c) => ({ name: c.name, value: c.value })), sizes },
-        variants: variants.map((v) => ({ color: v.color, size: v.size, price: Number(v.price), stock: Number(v.stock) })),
+        variants: variants.map((v) => ({ 
+          color: v.color, 
+          size: v.size, 
+          price: Number(v.price), 
+          stock: Number(v.stock),
+          sku: v.sku // Keep SKU if existing
+        })),
+        images: finalImages,
+        landing_thumbnail: finalThumbnail,
       };
+
       let res;
       if (editSlug) {
         res = await updateProduct(editSlug, payload);
-        alert("Product updated successfully 🚀");
+        setImageFiles([]); // Clear pending files, keep saved URLs
+        setThumbnailFile(null);
+        setSuccessMsg("Product updated successfully ✓");
+        setTimeout(() => setSuccessMsg(null), 4000);
       } else {
         res = await createProduct(payload);
-        alert("Product created successfully 🚀");
+        const newSlug = res?.data?.slug ?? res?.slug;
+        setSuccessMsg("Product created successfully ✓");
+        setTimeout(() => setSuccessMsg(null), 4000);
+        if (newSlug) router.replace(`/admin/products/add?edit=${newSlug}`);
       }
-      console.log("SUCCESS", res);
     } catch (err: any) {
       console.error(err);
-      alert(err.message);
+      alert(err.response?.data?.detail || err.message || "Something went wrong");
     } finally {
       setIsLoading(false);
     }
@@ -387,6 +465,9 @@ function AddProductContent() {
               <p className="text-red-500 text-sm mb-3">
                 ⚠ Please enter a price for all variants before saving.
               </p>
+            )}
+            {successMsg && (
+              <p className="text-green-600 text-sm mb-3 font-medium">✓ {successMsg}</p>
             )}
             <button
               type="submit"

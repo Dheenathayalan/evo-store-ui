@@ -7,12 +7,15 @@ import { addToCart } from "@/lib/api/cart";
 import { useCart } from "@/store/cart";
 import { useAuth } from "@/store/auth";
 import { Edit2 } from "lucide-react";
+import { useRecentlyViewed } from "@/store/recently-viewed";
+import RecentlyViewed from "@/components/RecentlyViewed";
 
 export default function ProductDetails() {
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
   const { openCart, addItemToCart, isAddingToCart } = useCart();
   const { isAdmin } = useAuth();
+  const { addProduct } = useRecentlyViewed();
 
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -21,6 +24,7 @@ export default function ProductDetails() {
   const [color, setColor] = useState<string>(""); // color name, matches variant.color
   const [hoveredColor, setHoveredColor] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [activeIndex, setActiveIndex] = useState(0);
   const carouselRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -45,20 +49,28 @@ export default function ProductDetails() {
     fetchProduct();
   }, [slug]);
 
+  // Track recently viewed
+  useEffect(() => {
+    if (product) {
+      addProduct(product);
+    }
+  }, [product, addProduct]);
+
   const scrollToIndex = (i: number) => {
     if (!carouselRef.current) return;
     carouselRef.current.scrollTo({
       left: i * carouselRef.current.clientWidth,
       behavior: "smooth",
     });
+    setActiveIndex(i);
   };
 
-  const scroll = (dir: "left" | "right") => {
+  const scroll = (dir: "left" | "right", currentImages: string[]) => {
     if (!carouselRef.current) return;
-    carouselRef.current.scrollBy({
-      left: dir === "right" ? carouselRef.current.clientWidth : -carouselRef.current.clientWidth,
-      behavior: "smooth",
-    });
+    const next = dir === "right"
+      ? Math.min(activeIndex + 1, currentImages.length - 1)
+      : Math.max(activeIndex - 1, 0);
+    scrollToIndex(next);
   };
 
   /* ─── Loading ─── */
@@ -126,12 +138,26 @@ export default function ProductDetails() {
               {images.map((img, i) => (
                 <div
                   key={i}
-                  className="min-w-full snap-center flex justify-center items-center"
+                  className="min-w-full snap-center flex justify-center items-center overflow-hidden cursor-zoom-in"
+                  onMouseMove={(e) => {
+                    const target = e.currentTarget;
+                    const { left, top, width, height } = target.getBoundingClientRect();
+                    const x = ((e.pageX - left) / width) * 100;
+                    const y = ((e.pageY - top) / height) * 100;
+                    const img = target.querySelector("img");
+                    if (img) {
+                      img.style.transformOrigin = `${x}% ${y}%`;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    const img = e.currentTarget.querySelector("img");
+                    if (img) img.style.transformOrigin = "center center";
+                  }}
                 >
                   <img
                     src={img}
                     alt={`${product.name} – image ${i + 1}`}
-                    className="h-[500px] object-contain transition duration-700 hover:scale-105"
+                    className="h-[500px] w-full object-contain transition duration-200 hover:scale-[2.5]"
                   />
                 </div>
               ))}
@@ -140,13 +166,13 @@ export default function ProductDetails() {
             {images.length > 1 && (
               <>
                 <button
-                  onClick={() => scroll("left")}
+                  onClick={() => scroll("left", images)}
                   className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/40 text-white px-3 py-2"
                 >
                   ‹
                 </button>
                 <button
-                  onClick={() => scroll("right")}
+                  onClick={() => scroll("right", images)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/40 text-white px-3 py-2"
                 >
                   ›
@@ -159,13 +185,21 @@ export default function ProductDetails() {
           {images.length > 1 && (
             <div className="flex gap-3 mt-4">
               {images.map((img, i) => (
-                <img
+                <button
                   key={i}
-                  src={img}
-                  alt={`Thumbnail ${i + 1}`}
                   onClick={() => scrollToIndex(i)}
-                  className="w-16 h-16 object-cover cursor-pointer border hover:border-black"
-                />
+                  className={`w-16 h-16 flex-shrink-0 overflow-hidden border-2 transition-all duration-200 ${
+                    i === activeIndex
+                      ? "border-black scale-105"
+                      : "border-transparent hover:border-gray-400"
+                  }`}
+                >
+                  <img
+                    src={img}
+                    alt={`Thumbnail ${i + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
               ))}
             </div>
           )}
@@ -195,15 +229,14 @@ export default function ProductDetails() {
               {colors.map((c, i) => (
                 <div
                   key={i}
-                  className="relative"
+                  className="relative cursor-pointer"
                   onMouseEnter={() => setHoveredColor(c.name)}
                   onMouseLeave={() => setHoveredColor(null)}
                   onClick={() => setColor(color === c.name ? "" : c.name)}
                 >
                   <div
-                    className={`w-5 h-5 rounded-full cursor-pointer border-2 transition hover:scale-110 ${
-                      color === c.name ? "border-black scale-110" : "border-gray-300"
-                    }`}
+                    className={`w-5 h-5 rounded-full cursor-pointer border-2 transition hover:scale-110 ${color === c.name ? "border-black scale-110" : "border-gray-300"
+                      }`}
                     style={{ backgroundColor: c.value }}
                   />
                   {/* Tooltip */}
@@ -238,32 +271,39 @@ export default function ProductDetails() {
           <div className="flex items-center gap-4 mb-6 text-sm">
             <span className="text-gray-600">Quantity:</span>
             <div className="flex items-center gap-3 border w-fit px-2 py-1">
-              <button 
+              <button
                 onClick={() => setQuantity(q => Math.max(1, q - 1))}
                 className="cursor-pointer"
               >−</button>
               <span className="w-6 text-center">{quantity}</span>
-              <button 
-                onClick={() => setQuantity(q => q + 1)}
-                className="cursor-pointer"
+              <button
+                onClick={() => setQuantity(q => Math.min(q + 1, variantStock || 1))}
+                disabled={!activeVariant || quantity >= variantStock}
+                className="cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
               >+</button>
             </div>
+            {activeVariant && variantStock > 0 && (
+              <span className="text-xs text-gray-400">{variantStock} in stock</span>
+            )}
+            {activeVariant && variantStock === 0 && (
+              <span className="text-xs text-red-500 font-medium">Out of stock</span>
+            )}
           </div>
 
           {/* Buttons */}
           <div className="flex gap-4 mb-4 flex-col sm:flex-row">
-            <button 
+            <button
               onClick={async () => {
                 if (!size || !color) {
                   alert("Please select size and color");
                   return;
                 }
-                
+
                 try {
                   // Use the selected variant's SKU
                   const sku = activeVariant?.sku || `${product._id || product.id}-${color}-${size}`;
                   await addItemToCart(sku, quantity);
-                  
+
                   // Open cart drawer
                   openCart();
                 } catch (err: any) {
@@ -279,7 +319,7 @@ export default function ProductDetails() {
               {isAddingToCart ? "ADDING..." : "ADD TO CART"}
             </button>
             {isAdmin && (
-              <button 
+              <button
                 onClick={() => router.push(`/admin/products/add?edit=${slug}`)}
                 className="flex-1 border border-black py-3 text-sm font-medium flex items-center justify-center gap-2 hover:bg-gray-100 transition"
               >
@@ -291,7 +331,7 @@ export default function ProductDetails() {
           </div>
 
           <p className="text-xs text-gray-600 mb-6">
-            {variantStock > 0 ? `In stock (${variantStock})` : "Out of stock"} · Ships tomorrow · 14-day easy returns
+            {variantStock > 0 ? `In stock (${variantStock})` : "Out of stock"} · Ships tomorrow · 7-day easy returns
           </p>
 
           <div className="mt-6 border-t pt-4 text-sm cursor-pointer">
@@ -317,8 +357,7 @@ export default function ProductDetails() {
         </div>
       )}
 
-      {/* YOU MIGHT ALSO LIKE */}
-      <div className="border-t px-6 md:px-10 py-12">
+      {/* <div className="border-t px-6 md:px-10 py-12">
         <h2 className="text-sm tracking-widest mb-6">YOU MIGHT ALSO LIKE</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {[1, 2, 3, 4].map((i) => (
@@ -332,7 +371,10 @@ export default function ProductDetails() {
             </div>
           ))}
         </div>
-      </div>
+      </div> */}
+
+      {/* RECENTLY VIEWED */}
+      <RecentlyViewed currentProductId={product?._id ?? product?.id} />
 
       {/* MADE RIGHT */}
       <div className="border-t grid md:grid-cols-2">

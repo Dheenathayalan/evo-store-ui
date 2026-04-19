@@ -5,6 +5,29 @@
   transition: all 0.2s ease;
 }
 
+/* Pointer cursor on all interactive elements */
+button,
+a,
+input[type="submit"],
+input[type="button"],
+input[type="checkbox"],
+input[type="radio"],
+input[type="file"],
+[role="button"],
+[tabindex],
+label[for],
+select,
+summary {
+  cursor: pointer;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;

@@ -11,6 +11,10 @@ export const getProducts = (limit: number = 10, cursor?: string) => {
   return api.get(url);
 };
 
+export const getLandingProducts = (limit: number = 10) => {
+  return api.get(`/products/landing?limit=${limit}`);
+};
+
 export const searchProducts = (search: string, limit: number = 10, cursor?: string) => {
   let url = `/products/search?search=${encodeURIComponent(search)}&limit=${limit}`;
   if (cursor) url += `&cursor=${cursor}`;
