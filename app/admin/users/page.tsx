@@ -63,7 +63,9 @@ export default function AdminUsersPage() {
                     <h3 className="font-semibold text-lg flex items-center gap-2">
                         {user.first_name} {user.last_name}
                         {user.is_admin && (
-                            <ShieldCheck size={16} className="text-red-500" title="Administrator" />
+                            <span title="Administrator">
+                                <ShieldCheck size={16} className="text-red-500" aria-label="Administrator" />
+                            </span>
                         )}
                     </h3>
                     <div className={`text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded ${user.is_active ? 'text-green-600 bg-green-50' : 'text-gray-400 bg-gray-50'}`}>
