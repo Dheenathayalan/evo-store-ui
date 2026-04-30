@@ -3,6 +3,7 @@
 import { useCart } from "@/store/cart";
 import { useAuth } from "@/store/auth";
 import { useRouter } from "next/navigation";
+import { toast } from "@/store/toast";
 import { useState, useEffect } from "react";
 import { ChevronLeft, MapPin, CreditCard, ShoppingBag, ShieldCheck, Plus, Home, Briefcase, Loader2 } from "lucide-react";
 import Script from "next/script";
@@ -53,7 +54,37 @@ export default function CheckoutPage() {
     is_default: true
   });
 
-  const total = items.reduce((acc, item) => acc + item.price * item.qty, 0);
+  const subtotal = items.reduce((acc, item) => acc + item.price * item.qty, 0);
+
+  // Calculate multi-buy discounts
+  const multiBuyDiscount = (() => {
+    const productGroups: Record<string, { qty: number; threshold: number; amount: number }> = {};
+    
+    items.forEach(item => {
+      if (item.productId && item.multi_buy_threshold && item.multi_buy_threshold > 0) {
+        if (!productGroups[item.productId]) {
+          productGroups[item.productId] = { 
+            qty: 0, 
+            threshold: item.multi_buy_threshold, 
+            amount: item.multi_buy_discount_amount || 0 
+          };
+        }
+        productGroups[item.productId].qty += item.qty;
+      }
+    });
+
+    let totalDiscount = 0;
+    Object.values(productGroups).forEach(group => {
+      if (group.qty >= group.threshold) {
+        const applications = Math.floor(group.qty / group.threshold);
+        totalDiscount += applications * group.amount;
+      }
+    });
+
+    return totalDiscount;
+  })();
+
+  const total = subtotal - multiBuyDiscount;
 
   useEffect(() => setMounted(true), []);
 
@@ -101,7 +132,7 @@ export default function CheckoutPage() {
       setSelectedAddress(newAddr);
       setShowAddForm(false);
     } catch (err) {
-      alert("Failed to save address");
+      toast.error("Failed to save address");
     } finally {
       setIsSavingAddress(false);
     }
@@ -121,7 +152,7 @@ export default function CheckoutPage() {
       // 0. Load Razorpay script only when user clicks Pay
       const isLoaded = await loadRazorpay();
       if (!isLoaded) {
-        alert("Razorpay SDK failed to load. Check your internet connection.");
+        toast.error("Razorpay SDK failed to load. Check your internet connection.");
         setIsProcessing(false);
         return;
       }
@@ -134,7 +165,7 @@ export default function CheckoutPage() {
       console.log("RAZORPAY KEY:", rzpKey); // Debugging
 
       if (!rzpKey) {
-        alert("CRITICAL: Razorpay Key is missing. Please restart your dev server (npm run dev).");
+        toast.error("CRITICAL: Razorpay Key is missing. Please restart your dev server (npm run dev).");
         setIsProcessing(false);
         return;
       }
@@ -185,10 +216,10 @@ export default function CheckoutPage() {
             // 4. Success!
             await clearCartApi();
             clearCart();
-            alert("Payment Successful! Order Placed.");
+            toast.success("Payment Successful! Order Placed.");
             router.push("/orders");
           } catch (err: any) {
-            alert("Payment Verification Failed: " + err.message);
+            toast.error("Payment Verification Failed: " + err.message);
           }
         },
         prefill: {
@@ -202,11 +233,11 @@ export default function CheckoutPage() {
 
       const rzp = new (window as any).Razorpay(options);
       rzp.on("payment.failed", function (response: any) {
-        alert("Payment Failed: " + response.error.description);
+        toast.error("Payment Failed: " + response.error.description);
       });
       rzp.open();
     } catch (err: any) {
-      alert("Order Creation Failed: " + (err.response?.data?.detail || err.message));
+      toast.error("Order Creation Failed: " + (err.response?.data?.detail || err.message));
     } finally {
       setIsProcessing(false);
     }
@@ -323,8 +354,14 @@ export default function CheckoutPage() {
             <div className="border-t pt-4 space-y-2 text-sm">
               <div className="flex justify-between">
                 <p className="text-gray-500">Subtotal</p>
-                <p>₹{total.toLocaleString("en-IN")}</p>
+                <p>₹{subtotal.toLocaleString("en-IN")}</p>
               </div>
+              {multiBuyDiscount > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <p>Multi-buy Discount</p>
+                  <p>-₹{multiBuyDiscount.toLocaleString("en-IN")}</p>
+                </div>
+              )}
               <div className="flex justify-between">
                 <p className="text-gray-500">Shipping</p>
                 <p className="text-green-600 font-medium tracking-tight">FREE</p>

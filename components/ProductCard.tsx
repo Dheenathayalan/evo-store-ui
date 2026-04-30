@@ -13,6 +13,8 @@ export default function ProductCard({ product, index }: any) {
     product.images?.[0] ??
     product.image ??
     "";
+  const discount: number = product.discount_percentage ?? 0;
+  const finalizedPrice: number = discount > 0 ? price * (1 - discount / 100) : price;
   // ──────────────────────────────────────────────────────────────
 
   return (
@@ -41,12 +43,24 @@ export default function ProductCard({ product, index }: any) {
             </div>
           )}
 
+          {discount > 0 && (
+            <div className="absolute top-3 left-3 z-10 bg-red-600 text-white text-[10px] font-bold px-2 py-1 tracking-wider uppercase">
+              {discount}% OFF
+            </div>
+          )}
         </div>
 
         {/* Bottom Info */}
-        <div className="flex justify-between items-center mt-3 bg-white px-4 py-3 gap-4">
+        <div className="flex justify-between items-center mt-3 bg-white px-4 py-3 gap-2">
           <p className="text-sm tracking-widest truncate flex-1" title={name}>{name}</p>
-          <p className="text-sm shrink-0">₹ {price.toLocaleString("en-IN")}</p>
+          <div className="flex flex-col items-end">
+            {discount > 0 && (
+              <span className="text-[10px] text-gray-400 line-through">
+                ₹ {price.toLocaleString("en-IN")}
+              </span>
+            )}
+            <p className="text-sm shrink-0">₹ {finalizedPrice.toLocaleString("en-IN")}</p>
+          </div>
         </div>
       </motion.div>
     </Link>

@@ -28,3 +28,7 @@ export const deleteAddress = (addressId: string) => {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
 };
+
+export const getAllUsersAdmin = () => {
+    return api.get("/users/admin/active");
+};

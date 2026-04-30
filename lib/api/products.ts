@@ -5,9 +5,12 @@ export const createProduct = (payload: any) => {
   return api.post("/products", payload);
 };
 
-export const getProducts = (limit: number = 10, cursor?: string) => {
+export const getProducts = (limit: number = 10, cursor?: string, category?: string, color?: string, sort?: string) => {
   let url = `/products?limit=${limit}`;
   if (cursor) url += `&cursor=${cursor}`;
+  if (category) url += `&category=${encodeURIComponent(category)}`;
+  if (color) url += `&color=${encodeURIComponent(color)}`;
+  if (sort) url += `&sort=${sort}`;
   return api.get(url);
 };
 
@@ -30,4 +33,8 @@ export const updateProduct = (slug: string, payload: any) => {
   return api.put(`/products/${slug}`, payload, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
+};
+
+export const getUniqueFilters = () => {
+  return api.get("/products/filters/unique");
 };

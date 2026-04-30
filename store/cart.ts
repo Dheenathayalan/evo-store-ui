@@ -12,6 +12,9 @@ interface CartItem {
   color: string;
   size: string;
   sku: string;
+  productId?: string;
+  multi_buy_threshold?: number;
+  multi_buy_discount_amount?: number;
 }
 
 interface CartState {
@@ -131,6 +134,9 @@ export const useCart = create<CartState>((set) => ({
         color: item.color || "Default",
         size: item.size || "Default",
         sku: item.sku,
+        productId: item.productId,
+        multi_buy_threshold: item.multi_buy_threshold || 0,
+        multi_buy_discount_amount: item.multi_buy_discount_amount || 0,
       }));
 
       set({ items: cartItems, isLoading: false });

@@ -8,6 +8,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { createProduct, updateProduct, getProductBySlug } from "@/lib/api/products";
 import { getPresignedUrl, uploadFileToS3 } from "@/lib/api/upload";
 import { useAuth } from "@/store/auth";
+import { toast } from "@/store/toast";
+import { X } from "lucide-react";
 
 export const dynamic = 'force-dynamic';
 
@@ -22,11 +24,14 @@ const schema = z.object({
     .min(1, "Price required")
     .refine((val) => !isNaN(Number(val)), { message: "Must be a number" }),
   showInLanding: z.boolean().optional(),
+  discount_percentage: z.string().optional(),
+  multi_buy_threshold: z.string().optional(),
+  multi_buy_discount_amount: z.string().optional(),
 });
 
 const brands = ["YourBrand", "Nike", "Adidas"];
 const categories = ["tops", "bottoms", "accessories"];
-const sizesList = ["S", "M", "L", "XL"];
+const sizesList = ["XS", "S", "M", "L", "XL", "2XL"];
 
 /* ------------------ PAGE ------------------ */
 export default function AddProductPage() {
@@ -45,7 +50,7 @@ function AddProductContent() {
 
   const searchParams = useSearchParams();
   const editSlug = searchParams.get("edit"); // Get edit slug from query params
-  
+
   const {
     register,
     handleSubmit,
@@ -57,9 +62,9 @@ function AddProductContent() {
   const [colors, setColors] = useState<any[]>([]);
   const [variants, setVariants] = useState<any[]>([]);
   const [variantErrors, setVariantErrors] = useState<boolean[]>([]);
-  const [colorInput, setColorInput] = useState({ name: "", value: "#000000" });
+  const [colorInput, setColorInput] = useState({ name: "", value: "#000000", design_color: "" });
   const [images, setImages] = useState<string[]>([]);
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imageFiles, setImageFiles] = useState<{ file: File; preview: string }[]>([]);
   const [thumbnail, setThumbnail] = useState<string | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [productId, setProductId] = useState<string | null>(null); // MongoDB _id for S3 folder
@@ -95,10 +100,10 @@ function AddProductContent() {
       try {
         const res: any = await getProductBySlug(editSlug);
         const data = res?.data ?? res;
-        
+
         // Store the _id for S3 folder organization
         if (data._id) setProductId(data._id);
-        
+
         // Populate form fields
         setValue("title", data.title);
         setValue("brand", data.brand);
@@ -106,34 +111,46 @@ function AddProductContent() {
         setValue("description", data.description);
         setValue("base_price", String(data.base_price)); // Convert number to string for form
         setValue("showInLanding", data.showInLanding || false);
-        
+        setValue("discount_percentage", data.discount_percentage ? String(data.discount_percentage) : "0");
+        setValue("multi_buy_threshold", data.multi_buy_threshold ? String(data.multi_buy_threshold) : "0");
+        setValue("multi_buy_discount_amount", data.multi_buy_discount_amount ? String(data.multi_buy_discount_amount) : "0");
+
         // Set colors
         if (data.attributes?.colors) {
           setColors(data.attributes.colors);
         }
-        
+
         // Set sizes
         if (data.attributes?.sizes) {
           setSizes(data.attributes.sizes);
         }
-        
+
         // Set images
         if (data.images) {
           setImages(data.images);
         }
-        
+
         // Set thumbnail
         if (data.landing_thumbnail) {
           setThumbnail(data.landing_thumbnail);
         }
-        
+
         // Generate variants
         if (data.attributes?.sizes && data.attributes?.colors) {
           const newVariants = [];
           for (const size of data.attributes.sizes) {
             for (const color of data.attributes.colors) {
-              const existing = data.variants?.find((v: any) => v.size === size && v.color === color.name);
-              newVariants.push({ size, color: color.name, stock: existing?.stock || 0, price: existing?.price || 0 });
+              const existing = data.variants?.find(
+                (v: any) => v.size === size && (v.product_color === color.name || v.color === color.name)
+              );
+              newVariants.push({
+                size,
+                product_color: color.name,
+                design_color: color.design_color || "",
+                stock: existing?.stock || 0,
+                price: existing?.price || 0,
+                sku: existing?.sku || `${data._id || data.slug}-${color.name}-${size}`,
+              });
             }
           }
           setVariants(newVariants);
@@ -155,12 +172,19 @@ function AddProductContent() {
     const newVariants: any[] = [];
     sizes.forEach((size) => {
       colors.forEach((color) => {
-        const existing = variants.find((v) => v.size === size && v.color === color.name);
-        newVariants.push({ size, color: color.name, stock: existing?.stock || 0, price: existing?.price || 0 });
+        const existing = variants.find((v) => v.size === size && (v.product_color === color.name || v.color === color.name));
+        newVariants.push({
+          size,
+          product_color: color.name,
+          design_color: color.design_color || "",
+          stock: existing?.stock || 0,
+          price: existing?.price || 0,
+          sku: existing?.sku || `${productId || 'temp'}-${color.name}-${size}`,
+        });
       });
     });
     setVariants(newVariants);
-  }, [sizes, colors]);
+  }, [sizes, colors, productId]);
 
   // Prevent flicker: show blank background until hydration is finished
   if (!mounted) {
@@ -188,7 +212,7 @@ function AddProductContent() {
   const addColor = () => {
     if (!colorInput.name) return;
     setColors((prev) => [...prev, colorInput]);
-    setColorInput({ name: "", value: "#000000" });
+    setColorInput({ name: "", value: "#000000", design_color: "" });
   };
   const removeColor = (index: number) =>
     setColors((prev) => prev.filter((_, i) => i !== index));
@@ -196,11 +220,14 @@ function AddProductContent() {
   /* ------------------ IMAGE ------------------ */
   const handleImageUpload = (files: FileList | null) => {
     if (!files) return;
-    const newFiles = Array.from(files);
+    const newFiles = Array.from(files).map((f) => {
+      const preview = URL.createObjectURL(f);
+      return { file: f, preview };
+    });
     setImageFiles((prev) => [...prev, ...newFiles]);
-    setImages((prev) => [...prev, ...newFiles.map((f) => URL.createObjectURL(f))]);
+    setImages((prev) => [...prev, ...newFiles.map((f) => f.preview)]);
   };
-  
+
   const handleThumbnailUpload = (file: File | null) => {
     if (!file) return;
     setThumbnailFile(file);
@@ -208,13 +235,16 @@ function AddProductContent() {
   };
 
   const removeImage = (index: number) => {
-    // If it's an existing image (URL starts with http), just remove from images
-    // If it's a new file, we need to find its index in imageFiles
-    // Simplified: keep track of which is which
-    setImages(prev => prev.filter((_, i) => i !== index));
-    // This is a bit tricky since we don't know if the i-th image is from imageFiles or existing
-    // Let's just reset imageFiles for simplicity or manage better
-    // For now, if we match the preview URL, we can remove
+    const urlToRemove = images[index];
+    setImages((prev) => prev.filter((_, i) => i !== index));
+    if (urlToRemove.startsWith("blob:")) {
+      setImageFiles((prev) => prev.filter((f) => f.preview !== urlToRemove));
+    }
+  };
+
+  const removeThumbnail = () => {
+    setThumbnail(null);
+    setThumbnailFile(null);
   };
 
 
@@ -248,7 +278,7 @@ function AddProductContent() {
       const existingUrls = images.filter(img => img.startsWith("http"));
       const uploadedUrls: string[] = [];
 
-      for (const file of imageFiles) {
+      for (const { file } of imageFiles) {
         const presigned: any = await getPresignedUrl(file.name, file.type, s3ProductId, "images");
         const presignedData = presigned.data ?? presigned;
         await uploadFileToS3(presignedData.upload_url, file);
@@ -264,13 +294,17 @@ function AddProductContent() {
         description: data.description,
         base_price: Number(data.base_price),
         showInLanding: data.showInLanding || false,
-        attributes: { colors: colors.map((c) => ({ name: c.name, value: c.value })), sizes },
-        variants: variants.map((v) => ({ 
-          color: v.color, 
-          size: v.size, 
-          price: Number(v.price), 
+        discount_percentage: Number(data.discount_percentage) || 0,
+        multi_buy_threshold: Number(data.multi_buy_threshold) || 0,
+        multi_buy_discount_amount: Number(data.multi_buy_discount_amount) || 0,
+        attributes: { colors: colors.map((c) => ({ name: c.name, value: c.value, design_color: c.design_color || null })), sizes },
+        variants: variants.map((v) => ({
+          product_color: v.product_color,
+          design_color: v.design_color || null,
+          size: v.size,
+          price: Number(v.price),
           stock: Number(v.stock),
-          sku: v.sku // Keep SKU if existing
+          sku: v.sku, // Keep SKU if existing
         })),
         images: finalImages,
         landing_thumbnail: finalThumbnail,
@@ -287,13 +321,12 @@ function AddProductContent() {
         res = await createProduct(payload);
         const data = res?.data ?? res;
         const newSlug = data?.slug;
-        setSuccessMsg("Product created successfully ✓");
-        setTimeout(() => setSuccessMsg(null), 4000);
+        toast.success(editSlug ? "Product updated" : "Product created");
         if (newSlug) router.replace(`/admin/products/add?edit=${newSlug}`);
       }
     } catch (err: any) {
       console.error(err);
-      alert(err.response?.data?.detail || err.message || "Something went wrong");
+      toast.error(err.response?.data?.detail || err.message || "Something went wrong");
     } finally {
       setIsLoading(false);
     }
@@ -341,6 +374,19 @@ function AddProductContent() {
             <Field label="Show in Landing">
               <input type="checkbox" {...register("showInLanding")} className="w-4 h-4" />
             </Field>
+            
+            <Field label="Discount Percentage (%)" error={errors.discount_percentage?.message}>
+              <input type="number" min="0" max="100" {...register("discount_percentage")} className="input" placeholder="e.g. 10" />
+            </Field>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Multi-buy Threshold (Qty)" error={errors.multi_buy_threshold?.message}>
+                <input type="number" min="0" {...register("multi_buy_threshold")} className="input" placeholder="e.g. 3" />
+              </Field>
+              <Field label="Multi-buy Discount (₹)" error={errors.multi_buy_discount_amount?.message}>
+                <input type="number" min="0" {...register("multi_buy_discount_amount")} className="input" placeholder="e.g. 500" />
+              </Field>
+            </div>
 
             <div>
               <p className="label">Sizes</p>
@@ -365,7 +411,19 @@ function AddProductContent() {
                 <p className="text-sm text-gray-400 mt-1">Drag & drop or click</p>
               </div>
               <div className="flex gap-3 mt-3 flex-wrap">
-                {images.map((img, i) => <img key={i} src={img} className="preview-img" alt={`img-${i}`} />)}
+                {images.map((img, i) => (
+                  <div key={i} className="relative group">
+                    <img src={img} className="preview-img" alt={`img-${i}`} />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(i)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                      title="Remove image"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -376,15 +434,27 @@ function AddProductContent() {
                 <input type="file" onChange={(e) => handleThumbnailUpload(e.target.files?.[0] || null)} />
                 <p className="text-sm text-gray-400 mt-1">Upload thumbnail</p>
               </div>
-              {thumbnail && <img src={thumbnail} className="preview-img mt-3" alt="thumbnail" />}
+              {thumbnail && (
+                <div className="relative group w-fit mt-3">
+                  <img src={thumbnail} className="preview-img" alt="thumbnail" />
+                  <button
+                    type="button"
+                    onClick={removeThumbnail}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                    title="Remove thumbnail"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/* Colors */}
+            {/* Product Color */}
             <div>
-              <p className="label">Colors</p>
-              <div className="flex flex-wrap gap-2 mb-3">
+              <p className="label">Product Color</p>
+              <div className="flex flex-wrap gap-2 mb-2">
                 <input
-                  placeholder="Color Name"
+                  placeholder="Product Color Name (e.g. Black)"
                   className="input flex-1 min-w-[120px]"
                   value={colorInput.name}
                   onChange={(e) => setColorInput({ ...colorInput, name: e.target.value })}
@@ -395,6 +465,14 @@ function AddProductContent() {
                   value={colorInput.value}
                   onChange={(e) => setColorInput({ ...colorInput, value: e.target.value })}
                 />
+              </div>
+              <div className="flex flex-wrap gap-2 mb-3">
+                <input
+                  placeholder="Design Color (optional, e.g. Red Stripe)"
+                  className="input flex-1 min-w-[160px]"
+                  value={colorInput.design_color}
+                  onChange={(e) => setColorInput({ ...colorInput, design_color: e.target.value })}
+                />
                 <button type="button" onClick={addColor} className="btn whitespace-nowrap">
                   + Add
                 </button>
@@ -403,7 +481,7 @@ function AddProductContent() {
                 {colors.map((c, i) => (
                   <div key={i} className="chip flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full shrink-0" style={{ background: c.value }} />
-                    <span className="text-xs">{c.name}</span>
+                    <span className="text-xs">{c.name}{c.design_color ? ` / ${c.design_color}` : ""}</span>
                     <button type="button" onClick={() => removeColor(i)} className="text-gray-400 hover:text-black">✕</button>
                   </div>
                 ))}
@@ -420,7 +498,8 @@ function AddProductContent() {
                   <thead className="bg-gray-100">
                     <tr>
                       <th className="text-left px-4 py-3 font-medium">Size</th>
-                      <th className="text-left px-4 py-3 font-medium">Color</th>
+                      <th className="text-left px-4 py-3 font-medium">Product Color</th>
+                      <th className="text-left px-4 py-3 font-medium">Design Color</th>
                       <th className="text-left px-4 py-3 font-medium">Stock</th>
                       <th className="text-left px-4 py-3 font-medium">Price</th>
                     </tr>
@@ -429,7 +508,8 @@ function AddProductContent() {
                     {variants.map((v, i) => (
                       <tr key={i} className={`border-t ${variantErrors[i] ? "bg-red-50" : ""}`}>
                         <td className="px-4 py-3">{v.size}</td>
-                        <td className="px-4 py-3">{v.color}</td>
+                        <td className="px-4 py-3">{v.product_color}</td>
+                        <td className="px-4 py-3 text-gray-400 text-xs">{v.design_color || "—"}</td>
                         <td className="px-4 py-2">
                           <input
                             type="number" min="0" value={v.stock || ""} placeholder="0"

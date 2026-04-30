@@ -3,6 +3,7 @@
 import { useAuth } from "@/store/auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "@/store/toast";
 import { 
   Plus, 
   MapPin, 
@@ -110,9 +111,10 @@ export default function AddressesPage() {
         await addAddress(formData);
       }
       await fetchAddresses();
+      toast.success("Address saved successfully");
       resetForm();
     } catch (err) {
-      alert("Failed to save address");
+      toast.error("Failed to save address");
     } finally {
       setSubmitting(false);
     }
@@ -123,8 +125,9 @@ export default function AddressesPage() {
     try {
       await deleteAddress(id);
       setAddresses(prev => prev.filter(a => a.id !== id));
+      toast.success("Address removed");
     } catch (err) {
-      alert("Failed to delete address");
+      toast.error("Failed to delete address");
     }
   };
 
@@ -132,8 +135,9 @@ export default function AddressesPage() {
     try {
       await updateAddress(addr.id, { ...addr, is_default: true });
       await fetchAddresses();
+      toast.success("Default address updated");
     } catch (err) {
-      alert("Failed to set default address");
+      toast.error("Failed to set default address");
     }
   };
 

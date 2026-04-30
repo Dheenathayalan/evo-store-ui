@@ -1,13 +1,32 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, Phone, Clock, Send } from "lucide-react";
+import { submitContactMessage } from "@/lib/api/contact";
+import { toast } from "@/store/toast";
 
 export default function ContactUsPage() {
-  const handleSubmit = (e: React.FormEvent) => {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    subject: "",
+    message: ""
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Logic for form submission would go here
-    alert("Thank you for reaching out. Our team will get back to you within 24–48 hours.");
+    setLoading(true);
+    try {
+      await submitContactMessage(formData);
+      toast.success("Thank you for reaching out. Our team will get back to you within 24–48 hours.");
+      setFormData({ name: "", email: "", subject: "", message: "" });
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Failed to send message. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -91,8 +110,11 @@ export default function ContactUsPage() {
                   <input 
                     required 
                     type="text" 
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full bg-transparent border-b border-white/20 py-2 outline-none focus:border-white transition-colors text-sm"
                     placeholder="John Doe"
+                    disabled={loading}
                   />
                 </div>
                 <div className="space-y-2">
@@ -100,8 +122,11 @@ export default function ContactUsPage() {
                   <input 
                     required 
                     type="email" 
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full bg-transparent border-b border-white/20 py-2 outline-none focus:border-white transition-colors text-sm"
                     placeholder="john@example.com"
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -111,8 +136,11 @@ export default function ContactUsPage() {
                 <input 
                   required 
                   type="text" 
+                  value={formData.subject}
+                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                   className="w-full bg-transparent border-b border-white/20 py-2 outline-none focus:border-white transition-colors text-sm"
                   placeholder="Order Inquiry"
+                  disabled={loading}
                 />
               </div>
 
@@ -121,16 +149,20 @@ export default function ContactUsPage() {
                 <textarea 
                   required 
                   rows={4}
+                  value={formData.message}
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                   className="w-full bg-transparent border-b border-white/20 py-2 outline-none focus:border-white transition-colors text-sm resize-none"
                   placeholder="Tell us how we can help..."
+                  disabled={loading}
                 ></textarea>
               </div>
 
               <button 
                 type="submit"
-                className="w-full bg-white text-black py-5 text-xs tracking-[0.3em] font-medium hover:bg-gray-200 transition duration-300 flex items-center justify-center gap-3 uppercase"
+                disabled={loading}
+                className="w-full bg-white text-black py-5 text-xs tracking-[0.3em] font-medium hover:bg-gray-200 transition duration-300 flex items-center justify-center gap-3 uppercase disabled:opacity-50"
               >
-                Send Message <Send size={14} />
+                {loading ? "Sending..." : "Send Message"} <Send size={14} />
               </button>
             </form>
           </motion.div>

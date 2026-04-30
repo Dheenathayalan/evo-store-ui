@@ -11,3 +11,11 @@ export const getMyOrders = async () => {
 export const getOrderDetails = async (id: string) => {
   return await client.get(`/orders/${id}`);
 };
+
+export const getAllOrdersAdmin = async () => {
+    return await client.get("/orders/admin/received");
+};
+
+export const updateOrderStatus = async (id: string, status: string) => {
+    return await client.patch(`/orders/${id}/status`, { status });
+};
