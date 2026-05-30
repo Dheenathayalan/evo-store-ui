@@ -47,7 +47,7 @@ export default function ProductDetails() {
         ]);
         const data = res?.data ?? res;
         setProduct(data);
-        setReviews(reviewsRes || []);
+        setReviews((reviewsRes as any[]) || []);
       } catch (err: any) {
         setError(typeof err === "string" ? err : "Failed to load product.");
       } finally {
