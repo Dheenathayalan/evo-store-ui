@@ -118,7 +118,7 @@ export default function ProductDetails() {
     { type: 'image', src: '/product/The-Classic-Crew-With-A-Modern-Cut.jpg', label: 'CLASSIC DESIGN', description: 'Timeless aesthetic with a contemporary touch.' },
   ];
 
-  const detailAssets = product.detailAssets && product.detailAssets.length > 0 ? product.detailAssets : defaultDetailAssets;
+  const detailAssets: any[] = product.detailAssets && product.detailAssets.length > 0 ? product.detailAssets : defaultDetailAssets;
   // API shape: attributes.colors = [{ name: string, value: string }]
   const colors: { name: string; value: string }[] = product.attributes?.colors ?? [];
   const designColors: { name: string; value: string }[] = product.attributes?.design_colors ?? [];
