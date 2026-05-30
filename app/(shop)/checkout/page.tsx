@@ -89,6 +89,7 @@ export default function CheckoutPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<{
     code: string;
     discount_percentage: number;
+    reward_order_ids?: string[];
   } | null>(null);
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
 
