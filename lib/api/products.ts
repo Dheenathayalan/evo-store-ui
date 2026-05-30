@@ -38,3 +38,10 @@ export const updateProduct = (slug: string, payload: any) => {
 export const getUniqueFilters = () => {
   return api.get("/products/filters/unique");
 };
+
+export const deleteProduct = (slug: string) => {
+  const { token } = useAuth.getState();
+  return api.delete(`/products/${slug}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+};

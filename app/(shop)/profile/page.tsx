@@ -13,7 +13,10 @@ import {
   User,
   Package,
   Users,
-  PlusSquare
+  PlusSquare,
+  List,
+  Tag,
+  CreditCard
 } from "lucide-react";
 
 
@@ -25,6 +28,12 @@ const menuItems = [
     label: "My Orders",
     sub: "Track, return, or buy again",
     href: "/orders",
+  },
+  {
+    icon: Tag,
+    label: "My Coupons",
+    sub: "Referral rewards & discounts",
+    href: "/coupons",
   },
   {
     icon: MapPin,
@@ -43,9 +52,9 @@ const menuItems = [
 const adminMenuItems = [
   {
     icon: PlusSquare,
-    label: "Add Product",
-    sub: "Create a new product listing",
-    href: "/admin/products/add",
+    label: "Products",
+    sub: "Manage product inventory",
+    href: "/admin/products",
   },
   {
     icon: Package,
@@ -54,10 +63,28 @@ const adminMenuItems = [
     href: "/admin/orders",
   },
   {
+    icon: Tag,
+    label: "Referral Coupons",
+    sub: "Issue coupons to verified buyers",
+    href: "/admin/coupons",
+  },
+  {
     icon: Users,
     label: "Active Accounts",
     sub: "View registered users",
     href: "/admin/users",
+  },
+  {
+    icon: List,
+    label: "Categories",
+    sub: "Manage categories and subcategories",
+    href: "/admin/categories",
+  },
+  {
+    icon: CreditCard,
+    label: "Redemptions",
+    sub: "Process reward payouts via UPI",
+    href: "/admin/redemptions",
   },
 ];
 
@@ -142,7 +169,7 @@ export default function ProfilePage() {
 
       {/* Menu */}
       <div className="max-w-2xl mx-auto px-6 py-10 space-y-3">
-        {!profile?.is_admin && menuItems.map(({ icon: Icon, label, sub, href }) => (
+        {menuItems.map(({ icon: Icon, label, sub, href }) => (
           <button
             key={label}
             onClick={() => router.push(href)}
@@ -166,10 +193,10 @@ export default function ProfilePage() {
               <button
                 key={label}
                 onClick={() => router.push(href)}
-                className="w-full bg-white flex items-center gap-4 px-5 py-4 rounded-lg hover:shadow-md transition group border-l-2 border-red-500"
+                className="w-full bg-white flex items-center gap-4 px-5 py-4 rounded-lg hover:shadow-md transition group"
               >
-                <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center group-hover:bg-red-100 transition">
-                  <Icon size={18} className="text-red-600 transition" />
+                <div className="w-10 h-10 rounded-full bg-[#f5f5f5] flex items-center justify-center group-hover:bg-red-50 transition">
+                  <Icon size={18} className="text-gray-600 group-hover:text-red-600 transition" />
                 </div>
                 <div className="flex-1 text-left">
                   <p className="text-sm font-medium tracking-wide">{label}</p>

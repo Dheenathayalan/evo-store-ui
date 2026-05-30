@@ -5,12 +5,13 @@ import { useAuth } from "@/store/auth";
 import { useRouter } from "next/navigation";
 import { toast } from "@/store/toast";
 import { useState, useEffect } from "react";
-import { ChevronLeft, MapPin, CreditCard, ShoppingBag, ShieldCheck, Plus, Home, Briefcase, Loader2 } from "lucide-react";
+import { ChevronLeft, MapPin, CreditCard, ShoppingBag, ShieldCheck, Plus, Home, Briefcase, Loader2, Tag, X } from "lucide-react";
 import Script from "next/script";
 import { createRazorpayOrder, verifyRazorpayPayment } from "@/lib/api/payment";
 import { getMyProfile, addAddress } from "@/lib/api/user";
 import { createOrder } from "@/lib/api/order";
 import { clearCartApi } from "@/lib/api/cart";
+import { validateCouponCode } from "@/lib/api/coupon";
 
 // Helper to load Razorpay script on demand
 const loadRazorpay = () => {
@@ -84,7 +85,36 @@ export default function CheckoutPage() {
     return totalDiscount;
   })();
 
-  const total = subtotal - multiBuyDiscount;
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discount_percentage: number;
+  } | null>(null);
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+
+  const baseSubtotalAfterMultiBuy = subtotal - multiBuyDiscount;
+  const couponDiscount = appliedCoupon 
+    ? Math.round(baseSubtotalAfterMultiBuy * (appliedCoupon.discount_percentage / 100)) 
+    : 0;
+  const total = baseSubtotalAfterMultiBuy - couponDiscount;
+
+  const handleApplyCoupon = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!couponInput.trim()) return;
+
+    setIsValidatingCoupon(true);
+    try {
+      const res: any = await validateCouponCode(couponInput.trim());
+      const data = res.data ?? res;
+      setAppliedCoupon(data);
+      toast.success(`${data.discount_percentage}% Referral Coupon Applied!`);
+      setCouponInput("");
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Invalid or expired coupon");
+    } finally {
+      setIsValidatingCoupon(false);
+    }
+  };
 
   useEffect(() => setMounted(true), []);
 
@@ -190,6 +220,7 @@ export default function CheckoutPage() {
             await createOrder({
               items: items.map(item => ({
                 id: item.id,
+                product_slug: item.product_slug,
                 name: item.name,
                 image: item.image,
                 price: item.price,
@@ -210,7 +241,9 @@ export default function CheckoutPage() {
                 type: selectedAddress.type
               },
               razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id
+              razorpay_payment_id: response.razorpay_payment_id,
+              coupon_code: appliedCoupon?.code || null,
+              applied_reward_order_ids: appliedCoupon?.reward_order_ids || []
             });
 
             // 4. Success!
@@ -255,7 +288,7 @@ export default function CheckoutPage() {
         <div className="w-10" /> {/* Spacer */}
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 pt-8 grid lg:grid-cols-3 gap-8">
+      <div className="max-w-6xl mx-auto px-4 md:px-8 pt-8 grid lg:grid-cols-3 gap-8 md:gap-12">
 
         {/* LEFT - FORM */}
         <div className="lg:col-span-2 space-y-6">
@@ -351,6 +384,48 @@ export default function CheckoutPage() {
               ))}
             </div>
 
+            {/* Coupon Application */}
+            <div className="border-t pt-4 mb-6">
+              {appliedCoupon ? (
+                <div className="flex items-center justify-between p-3 bg-green-50 rounded-xl border border-green-200 text-xs">
+                  <div className="flex items-center gap-2 text-green-700">
+                    <Tag size={16} />
+                    <span className="font-bold tracking-wider">{appliedCoupon.code}</span>
+                    <span className="text-[10px] bg-green-200 px-2 py-0.5 rounded uppercase font-semibold">
+                      {appliedCoupon.discount_percentage}% OFF
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setAppliedCoupon(null)}
+                    className="text-gray-400 hover:text-black font-bold text-xs"
+                    title="Remove coupon"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleApplyCoupon} className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Tag size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Referral or promo code"
+                      value={couponInput}
+                      onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                      className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs uppercase tracking-wider font-semibold outline-none focus:bg-white focus:border-black transition"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isValidatingCoupon || !couponInput.trim()}
+                    className="bg-black text-white px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-neutral-800 transition disabled:opacity-50 shrink-0"
+                  >
+                    {isValidatingCoupon ? "..." : "Apply"}
+                  </button>
+                </form>
+              )}
+            </div>
+
             <div className="border-t pt-4 space-y-2 text-sm">
               <div className="flex justify-between">
                 <p className="text-gray-500">Subtotal</p>
@@ -360,6 +435,14 @@ export default function CheckoutPage() {
                 <div className="flex justify-between text-green-600">
                   <p>Multi-buy Discount</p>
                   <p>-₹{multiBuyDiscount.toLocaleString("en-IN")}</p>
+                </div>
+              )}
+              {couponDiscount > 0 && (
+                <div className="flex justify-between text-green-600 font-medium">
+                  <p className="flex items-center gap-1.5">
+                    <Tag size={14} /> Referral Offer ({appliedCoupon?.discount_percentage}%)
+                  </p>
+                  <p>-₹{couponDiscount.toLocaleString("en-IN")}</p>
                 </div>
               )}
               <div className="flex justify-between">

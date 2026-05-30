@@ -66,21 +66,12 @@ export default function AdminOrdersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] pb-20">
-      {/* Header */}
-      <div className="bg-black text-white px-8 py-10">
-        <button 
-          onClick={() => router.back()}
-          className="flex items-center gap-2 text-white/50 hover:text-white transition group mb-4"
-        >
-          <ChevronLeft size={20} className="group-hover:-translate-x-1 transition" />
-          <span className="text-xs tracking-[4px] uppercase">Back to Profile</span>
-        </button>
-        <h1 className="text-3xl font-semibold tracking-tight">Received Orders</h1>
-        <p className="text-white/50 text-sm mt-2">Manage and track all customer orders</p>
-      </div>
-
-      <div className="max-w-6xl mx-auto px-6 -mt-6">
+    <div className="min-h-screen bg-[#f5f5f5] p-4 sm:p-6 md:p-10 pb-20">
+      <div className="max-w-6xl mx-auto space-y-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold">Received Orders</h1>
+          <p className="text-gray-500 text-sm mt-1">Manage and track all customer orders</p>
+        </div>
         {loading ? (
           <div className="space-y-4">
             {[1, 2, 3, 4].map((i) => (

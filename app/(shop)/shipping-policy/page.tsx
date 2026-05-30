@@ -1,109 +1,106 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Truck, Clock, MapPin, Search } from "lucide-react";
 
 export default function ShippingPolicyPage() {
-  const shippingSteps = [
-    {
-      icon: <Clock className="w-6 h-6" />,
-      title: "Processing",
-      time: "1–3 Business Days",
-      description: "Once your order is placed, our team carefully prepares and packs your items for shipment."
-    },
-    {
-      icon: <Truck className="w-6 h-6" />,
-      title: "Delivery",
-      time: "5–10 Business Days",
-      description: "Regional transit times vary by location. We work with premium carriers to ensure safe delivery."
-    }
-  ];
-
   return (
     <div className="bg-black text-white min-h-screen pt-32 pb-20 px-6 sm:px-10">
       <div className="max-w-4xl mx-auto">
-        {/* Header Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="text-center mb-24"
         >
-          <h1 className="text-4xl sm:text-5xl font-light tracking-[0.3em] mb-6 uppercase">
+          <h1 className="text-4xl sm:text-5xl font-light tracking-[0.3em] mb-4 text-center uppercase">
             SHIPPING POLICY
           </h1>
-          <p className="text-gray-400 text-sm tracking-widest uppercase">
-            Global delivery, premium care
+          <p className="text-gray-500 text-sm tracking-[0.2em] mb-16 text-center uppercase">
+            Last updated: January 28, 2025
           </p>
-        </motion.div>
 
-        <div className="space-y-24">
-          {/* Main Statement */}
-          <section className="text-center max-w-2xl mx-auto">
-             <p className="text-lg tracking-wide font-light text-white/90 leading-relaxed italic">
-               "We aim to deliver your orders quickly and safely, so you can start wearing your EVO Carlton Trends collection as soon as possible."
-             </p>
-          </section>
+          <div className="space-y-16 text-gray-300 leading-relaxed tracking-wide font-light">
+            
+            <section>
+              <h2 className="text-2xl text-white tracking-[0.15em] mb-8 uppercase border-b border-white/10 pb-4">
+                1. Shipping Timeframes
+              </h2>
+              <ul className="space-y-4 text-sm opacity-70 list-none border-l border-white/20 pl-4">
+                <li className="flex items-baseline gap-3"><div className="w-1 h-1 bg-white/50 shrink-0"/> Orders are processed within 2–3 business days after confirmation</li>
+                <li className="flex items-baseline gap-3"><div className="w-1 h-1 bg-white/50 shrink-0"/> Domestic (India) delivery: 5–10 business days</li>
+                <li className="flex items-baseline gap-3"><div className="w-1 h-1 bg-white/50 shrink-0"/> International delivery: 10–20 business days, depending on destination and customs clearance</li>
+                <li className="flex items-baseline gap-3"><div className="w-1 h-1 bg-white/50 shrink-0"/> Delivery timelines are estimates and may vary due to external factors</li>
+              </ul>
+            </section>
 
-          {/* Timeline Grid */}
-          <section className="grid md:grid-cols-2 gap-8">
-            {shippingSteps.map((step, i) => (
-              <motion.div 
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="p-10 border border-white/10 bg-white/5 hover:bg-white/10 transition group"
-              >
-                <div className="text-white/30 group-hover:text-white transition-colors duration-500 mb-8">
-                  {step.icon}
+            <section>
+              <h2 className="text-2xl text-white tracking-[0.15em] mb-8 uppercase border-b border-white/10 pb-4">
+                2. Shipping Charges
+              </h2>
+              <ul className="space-y-4 text-sm opacity-70 list-none border-l border-white/20 pl-4">
+                <li className="flex items-baseline gap-3"><div className="w-1 h-1 bg-white/50 shrink-0"/> Shipping charges are calculated at checkout based on delivery location</li>
+                <li className="flex items-baseline gap-3"><div className="w-1 h-1 bg-white/50 shrink-0"/> Free shipping may be offered on orders above a specified value (as mentioned on the website)</li>
+                <li className="flex items-baseline gap-3"><div className="w-1 h-1 bg-white/50 shrink-0"/> For international orders, customs duties, import taxes, or additional charges (if any) must be borne by the customer</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="text-2xl text-white tracking-[0.15em] mb-8 uppercase border-b border-white/10 pb-4">
+                3. Tracking & Delivery
+              </h2>
+              <p className="text-sm opacity-80 mb-6">Once your order is shipped, tracking details will be shared via email.</p>
+              
+              <div className="mb-6">
+                <p className="text-sm opacity-80 mb-3">EVO Carlton Trends is not responsible for delays caused by:</p>
+                <ul className="space-y-2 text-sm opacity-70 list-disc pl-6 marker:text-white/40">
+                  <li>Weather conditions</li>
+                  <li>Customs clearance</li>
+                  <li>Courier or logistics issues</li>
+                </ul>
+              </div>
+              
+              <p className="text-sm opacity-80">
+                If your order is delayed, damaged, or appears lost, please contact us at <span className="text-white">EVO Carlton Trendsstore@gmail.com</span>.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-2xl text-white tracking-[0.15em] mb-8 uppercase border-b border-white/10 pb-4">
+                4. Shipping Partners
+              </h2>
+              <ul className="space-y-4 text-sm opacity-70 list-none border-l border-white/20 pl-4">
+                <li className="flex items-baseline gap-3"><div className="w-1 h-1 bg-white/50 shrink-0"/> We work with trusted third-party courier partners to ensure safe and timely delivery</li>
+                <li className="flex items-baseline gap-3"><div className="w-1 h-1 bg-white/50 shrink-0"/> Customers are advised to check package condition at the time of delivery</li>
+                <li className="flex items-baseline gap-3"><div className="w-1 h-1 bg-white/50 shrink-0"/> Any visible damage or tampering should be reported immediately to the delivery agent and to our support team</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="text-2xl text-white tracking-[0.15em] mb-8 uppercase border-b border-white/10 pb-4">
+                5. Important Note
+              </h2>
+              <ul className="space-y-4 text-sm opacity-70 list-none border-l border-white/20 pl-4">
+                <li className="flex items-baseline gap-3"><div className="w-1 h-1 bg-white/50 shrink-0"/> Incorrect or incomplete address details may lead to delivery delays or non-delivery</li>
+                <li className="flex items-baseline gap-3"><div className="w-1 h-1 bg-white/50 shrink-0"/> EVO Carlton Trends will not be responsible for orders delayed or lost due to incorrect customer information</li>
+              </ul>
+            </section>
+
+            <section className="pt-16 border-t border-white/10">
+              <h2 className="text-2xl text-white tracking-[0.15em] mb-10 uppercase">6. Contact Information</h2>
+              <div className="bg-white/5 p-8 rounded-xl border border-white/5 space-y-6">
+                <div>
+                  <p className="text-xs text-white/40 tracking-widest uppercase mb-1">Email</p>
+                  <p className="text-sm">customercare@evocarltontrends.com</p>
                 </div>
-                <h3 className="text-sm tracking-[0.2em] uppercase text-white/40 mb-2">{step.title}</h3>
-                <h4 className="text-xl tracking-widest mb-4 font-light">{step.time}</h4>
-                <p className="text-sm text-gray-500 leading-relaxed font-light">{step.description}</p>
-              </motion.div>
-            ))}
-          </section>
+              </div>
+            </section>
 
-          {/* Additional Details */}
-          <section className="grid md:grid-cols-2 gap-12 pt-16 border-t border-white/10">
-            <div className="space-y-6">
-              <h3 className="text-lg tracking-widest uppercase text-white/90 flex items-center gap-3">
-                <MapPin size={18} className="text-white/40" />
-                Shipping Charges
-              </h3>
-              <p className="text-sm text-gray-500 leading-relaxed font-light">
-                Shipping charges are calculated at checkout and may vary based on your location and the size of your order. 
-                We offer free shipping on orders above a certain threshold (refer to the banner on our home page).
+            <div className="pt-20 text-center">
+              <p className="text-[10px] text-white/20 tracking-[0.5em] uppercase">
+                © 2026 EVO CARLTON TRENDS. ALL RIGHTS RESERVED.
               </p>
             </div>
-
-            <div className="space-y-6">
-              <h3 className="text-lg tracking-widest uppercase text-white/90 flex items-center gap-3">
-                <Search size={18} className="text-white/40" />
-                Order Tracking
-              </h3>
-              <p className="text-sm text-gray-500 leading-relaxed font-light">
-                You will receive a confirmation email with complete tracking details once your order is dispatched. 
-                Keep an eye on your inbox to track your shipment's journey to your doorstep.
-              </p>
-            </div>
-          </section>
-
-          {/* Note Section */}
-          <div className="p-8 bg-white/5 border border-white/5 text-center">
-            <p className="text-xs text-white/60 leading-relaxed font-light italic max-w-xl mx-auto">
-              Please note: Internal shipping delays may occur due to extreme weather, public holidays, or other external factors beyond our control. We appreciate your patience.
-            </p>
           </div>
-        </div>
-
-        <div className="mt-24 text-center">
-            <p className="text-[10px] text-white/20 tracking-[0.5em] uppercase">
-              EVO CARLTON TRENDS • LOGISTICS
-            </p>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

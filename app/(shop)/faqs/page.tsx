@@ -7,23 +7,23 @@ import { Plus, Minus } from "lucide-react";
 const faqs = [
   {
     question: "How long does delivery take?",
-    answer: "Orders are typically delivered within 5–10 business days depending on your location. We strive to process and dispatch all orders within 24-48 hours."
+    answer: "Orders are typically delivered within 5–10 business days depending on your location."
   },
   {
     question: "Can I return a product?",
-    answer: "Yes, we accept returns within 7 days of delivery, provided the item is unused, unwashed, and in its original condition with all tags intact. Please visit our Returns page for more details."
+    answer: "Yes, we accept returns within 7 days of delivery, provided the item is unused and in original condition."
   },
   {
     question: "How can I track my order?",
-    answer: "Once your order is shipped, you will receive a tracking link via email or SMS. You can also track your order status directly from your profile dashboard under 'Orders'."
+    answer: "Once your order is shipped, you will receive a tracking link via email or SMS."
   },
   {
     question: "Do you offer Cash on Delivery (COD)?",
-    answer: "Yes, Cash on Delivery (COD) is available on selected orders and locations. You will see the COD option during checkout if it is available for your pin code."
+    answer: "Yes, COD is available on selected orders."
   },
   {
     question: "How do I contact support?",
-    answer: "You can reach our dedicated support team through our 'Contact Us' page or by emailing support@evocarltontrends.com. We typically respond within 24 hours."
+    answer: "You can reach us through the Contact Us page or email us directly."
   }
 ];
 

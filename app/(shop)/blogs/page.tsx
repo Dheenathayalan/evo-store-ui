@@ -5,24 +5,28 @@ import Link from "next/link";
 
 const blogCategories = [
   {
+    title: "The Art of a Premium T-Shirt",
+    description: "A deep dive into the craftsmanship, materials, and finishing processes behind our everyday essentials.",
+    image: "/images/blog-bts.jpg", // Placeholder logic
+    slug: "/blogs/the-art-of-a-premium-t-shirt"
+  },
+  {
     title: "Latest fashion trends",
     description: "Explore the cutting-edge styles taking over the streets and runways this season.",
-    image: "/images/blog-trends.jpg", // Placeholder logic
+    image: "/images/blog-trends.jpg",
+    slug: "#"
   },
   {
     title: "Styling guides",
     description: "Learn how to pair our urban collection with your existing wardrobe for maximum impact.",
     image: "/images/blog-style.jpg",
+    slug: "#"
   },
   {
     title: "Seasonal collections",
     description: "A deep dive into the inspiration and craftsmanship behind our latest drops.",
     image: "/images/blog-collection.jpg",
-  },
-  {
-    title: "Behind-the-scenes stories",
-    description: "Meet the designers and see the process that brings EVO Carlton Trends to life.",
-    image: "/images/blog-bts.jpg",
+    slug: "#"
   }
 ];
 
@@ -59,31 +63,33 @@ export default function BlogsPage() {
               transition={{ duration: 0.8, delay: index * 0.1 }}
               className="group cursor-pointer"
             >
-              <div className="relative aspect-[16/10] overflow-hidden bg-white/5 mb-6 border border-white/10">
-                {/* Image Placeholder with Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10 opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
-                <div className="w-full h-full bg-neutral-900 flex items-center justify-center">
-                  <span className="text-white/10 tracking-[0.5em] text-xs uppercase">Category Image</span>
+              <Link href={category.slug || "#"} className="block">
+                <div className="relative aspect-[16/10] overflow-hidden bg-white/5 mb-6 border border-white/10">
+                  {/* Image Placeholder with Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10 opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
+                  <div className="w-full h-full bg-neutral-900 flex items-center justify-center">
+                    <span className="text-white/10 tracking-[0.5em] text-xs uppercase">Category Image</span>
+                  </div>
+                  
+                  {/* Top Right Label */}
+                  <div className="absolute top-4 right-4 z-20">
+                    <span className="text-[10px] tracking-[0.2em] uppercase border border-white/20 px-3 py-1 bg-black/40 backdrop-blur-sm">
+                      {index === 0 ? "New" : "Explore"}
+                    </span>
+                  </div>
                 </div>
-                
-                {/* Top Right Label */}
-                <div className="absolute top-4 right-4 z-20">
-                  <span className="text-[10px] tracking-[0.2em] uppercase border border-white/20 px-3 py-1 bg-black/40 backdrop-blur-sm">
-                    {index === 0 ? "New" : "Explore"}
-                  </span>
-                </div>
-              </div>
 
-              <h3 className="text-xl tracking-[0.1em] font-light mb-3 group-hover:text-white transition-colors duration-300">
-                {category.title.toUpperCase()}
-              </h3>
-              <p className="text-gray-500 text-sm leading-relaxed tracking-wide font-light mb-6">
-                {category.description}
-              </p>
-              
-              <div className="inline-flex items-center gap-2 text-[10px] tracking-[0.2em] text-white/40 group-hover:text-white transition-all duration-300">
-                DISCOVER MORE <div className="h-[1px] w-8 bg-current transition-all duration-300 group-hover:w-12"/>
-              </div>
+                <h3 className="text-xl tracking-[0.1em] font-light mb-3 group-hover:text-white transition-colors duration-300">
+                  {category.title.toUpperCase()}
+                </h3>
+                <p className="text-gray-500 text-sm leading-relaxed tracking-wide font-light mb-6">
+                  {category.description}
+                </p>
+                
+                <div className="inline-flex items-center gap-2 text-[10px] tracking-[0.2em] text-white/40 group-hover:text-white transition-all duration-300">
+                  DISCOVER MORE <div className="h-[1px] w-8 bg-current transition-all duration-300 group-hover:w-12"/>
+                </div>
+              </Link>
             </motion.div>
           ))}
         </div>

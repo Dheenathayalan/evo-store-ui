@@ -60,7 +60,7 @@ export default function Footer(props: any) {
 
           <div className="space-y-3 text-gray-300">
             <p>
-              <Link href="/return-policy" className="hover:text-white transition-colors">RETURN</Link>
+              <Link href="/replacement-policy" className="hover:text-white transition-colors">REPLACEMENT</Link>
             </p>
             <p>
               <Link href="#">TERMS</Link>

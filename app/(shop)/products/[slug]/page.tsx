@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getProductBySlug } from "@/lib/api/products";
+import { getProductReviews } from "@/lib/api/review";
 import { addToCart } from "@/lib/api/cart";
 import { useCart } from "@/store/cart";
 import { useAuth } from "@/store/auth";
-import { Edit2, Ruler, X } from "lucide-react";
+import { Edit2, Ruler, X, Star } from "lucide-react";
 import { useRecentlyViewed } from "@/store/recently-viewed";
 import RecentlyViewed from "@/components/RecentlyViewed";
 import { toast } from "@/store/toast";
@@ -20,6 +21,7 @@ export default function ProductDetails() {
   const { addProduct } = useRecentlyViewed();
 
   const [product, setProduct] = useState<any>(null);
+  const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [size, setSize] = useState<string>("");
@@ -28,6 +30,7 @@ export default function ProductDetails() {
   const [quantity, setQuantity] = useState(1);
   const [activeIndex, setActiveIndex] = useState(0);
   const [showMeasurements, setShowMeasurements] = useState(false);
+  const [showDetailsCare, setShowDetailsCare] = useState(false);
   const [measurementUnit, setMeasurementUnit] = useState<"in" | "cm">("in");
   const carouselRef = useRef<HTMLDivElement | null>(null);
 
@@ -38,11 +41,13 @@ export default function ProductDetails() {
       setLoading(true);
       setError(null);
       try {
-        const res: any = await getProductBySlug(slug);
-        // Support both { data: {...} } and plain object shapes
+        const [res, reviewsRes] = await Promise.all([
+          getProductBySlug(slug),
+          getProductReviews(slug).catch(() => [])
+        ]);
         const data = res?.data ?? res;
         setProduct(data);
-        // No default selection — user picks size & color
+        setReviews(reviewsRes || []);
       } catch (err: any) {
         setError(typeof err === "string" ? err : "Failed to load product.");
       } finally {
@@ -107,15 +112,16 @@ export default function ProductDetails() {
   const images: string[] = product.images ?? (product.image ? [product.image] : []);
   const detailImages: string[] = product.detailImages ?? images;
 
-  const detailAssets = [
+  const defaultDetailAssets = [
     { type: 'video', src: '/product/the-black-t-shirt-on-a-wooden-hanger-rotating-smoo.mp4', label: 'PREMIUM CONSTRUCTION', description: 'Expertly crafted for durability and style.' },
-    { type: 'image', src: '/product/The-Classic-Crew-With-A-Modern-Cut-02.jpg', label: 'MODERN CUT', description: 'A tailored silhouette that flatters every frame.' },
     { type: 'video', src: '/product/the-black-100-organic-cotton-fabric-with-the-spira.mp4', label: 'ORGANIC COTTON', description: 'GOTS certified 100% organic cotton fabric.' },
     { type: 'image', src: '/product/The-Classic-Crew-With-A-Modern-Cut.jpg', label: 'CLASSIC DESIGN', description: 'Timeless aesthetic with a contemporary touch.' },
-    { type: 'image', src: '/product/The-Classic-Crew-With-A-Modern-Cut-03.jpg', label: 'SIGNATURE FIT', description: 'Perfected over months for the ultimate comfort.' }
   ];
+
+  const detailAssets = product.detailAssets && product.detailAssets.length > 0 ? product.detailAssets : defaultDetailAssets;
   // API shape: attributes.colors = [{ name: string, value: string }]
-  const colors: { name: string; value: string; design_color?: string }[] = product.attributes?.colors ?? [];
+  const colors: { name: string; value: string }[] = product.attributes?.colors ?? [];
+  const designColors: { name: string; value: string }[] = product.attributes?.design_colors ?? [];
   // API shape: attributes.sizes = string[]
   const sizes: string[] = product.attributes?.sizes ?? [];
   // Stock: sum of all variant stocks
@@ -216,7 +222,7 @@ export default function ProductDetails() {
 
           {/* Thumbnails */}
           {images.length > 0 && (
-            <div className="flex gap-3 mt-4">
+            <div className="flex justify-center gap-3 mt-4 overflow-x-auto py-1">
               {images.map((img, i) => (
                 <button
                   key={i}
@@ -241,8 +247,8 @@ export default function ProductDetails() {
         <div className="max-w-md">
           <h1 className="text-xl tracking-wide mb-1">{product.title}</h1>
 
-          {product.brand && (
-            <p className="text-sm text-gray-500 mb-1 uppercase tracking-widest text-xs">{product.brand}</p>
+          {product.fits && (
+            <p className="text-sm text-gray-500 mb-2 uppercase tracking-widest text-xs">{product.fits}</p>
           )}
 
           {product.description && (
@@ -307,19 +313,28 @@ export default function ProductDetails() {
                     {/* Tooltip */}
                     {hoveredColor === c.name && (
                       <div className="absolute bottom-7 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-10 pointer-events-none">
-                        {c.name}{c.design_color ? ` / ${c.design_color}` : ""}
+                        {c.name}
                         <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black" />
                       </div>
                     )}
                   </div>
                 ))}
               </div>
-              {color && (() => {
-                const selectedColor = colors.find((c) => c.name === color);
-                return selectedColor?.design_color ? (
-                  <p className="text-xs text-gray-400 mt-2">Design: {selectedColor.design_color}</p>
-                ) : null;
-              })()}
+            </div>
+          )}
+
+          {/* Design Colors */}
+          {designColors.length > 0 && (
+            <div className="mb-6">
+              <p className="text-xs text-gray-500 tracking-widest uppercase mb-2">Design Color</p>
+              <div className="flex gap-3">
+                {designColors.map((c, i) => (
+                  <div key={i} className="relative flex items-center gap-2 border border-[#cbcbcb] rounded px-3 py-1.5 bg-gray-50/50">
+                    <div className="w-4 h-4 rounded-full border border-gray-300 shadow-sm" style={{ backgroundColor: c.value }} />
+                    <span className="text-xs font-medium text-gray-700">{c.name}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
@@ -446,12 +461,21 @@ export default function ProductDetails() {
           </div>
 
           <p className="text-xs text-gray-600 mb-6">
-            {variantStock > 0 ? `In stock (${variantStock})` : "Out of stock"} · Ships tomorrow · 7-day easy returns
+            {variantStock > 0 ? `In stock (${variantStock})` : "Out of stock"} · 7-day easy returns
           </p>
 
-          <div className="mt-6 border-t border-[#cbcbcb] pt-4 text-sm cursor-pointer">
-            Details & Care +
+          <div
+            className="mt-6 border-t border-[#cbcbcb] pt-4 text-sm cursor-pointer flex items-center justify-between"
+            onClick={() => setShowDetailsCare(!showDetailsCare)}
+          >
+            <span>Details & Care</span>
+            <span className="text-lg leading-none">{showDetailsCare ? "−" : "+"}</span>
           </div>
+          {showDetailsCare && product.details_and_care && (
+            <div className="mt-4 text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">
+              {product.details_and_care}
+            </div>
+          )}
         </div>
       </div>
 
@@ -460,8 +484,8 @@ export default function ProductDetails() {
         <h2 className="text-sm tracking-widest mb-6">THE DETAILS</h2>
         <div className="flex overflow-x-auto gap-6 pb-8 no-scrollbar snap-x">
           {detailAssets.map((asset, i) => (
-            <div key={i} className="flex flex-col min-w-[300px] md:min-w-[380px] snap-start">
-              <div className="relative overflow-hidden aspect-[4/5] bg-[#f9f9f9]">
+            <div key={i} className="flex flex-col min-w-[300px] md:min-w-[380px] w-[300px] md:w-[380px] flex-none snap-start">
+              <div className="relative overflow-hidden aspect-[4/5] w-full bg-[#f9f9f9]">
                 {asset.type === 'video' ? (
                   <video
                     src={asset.src}
@@ -472,7 +496,7 @@ export default function ProductDetails() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <img src={asset.src} alt={asset.label} className="w-full h-full object-cover transition duration-700 hover:scale-105" />
+                  <img src={asset.src} alt={asset.label} className="w-full h-full object-contain transition duration-700 hover:scale-105" />
                 )}
                 {/* OVERLAY TEXT */}
                 <div className="absolute inset-x-0 bottom-0 p-8 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
@@ -482,6 +506,37 @@ export default function ProductDetails() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* REVIEWS SECTION */}
+      <div className="border-t border-[#cbcbcb] px-6 md:px-10 py-20 bg-[#f5f5f5]">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-sm tracking-widest mb-10 text-center uppercase font-bold">Customer Reviews</h2>
+          {reviews.length === 0 ? (
+            <p className="text-center text-sm text-gray-500 italic">No reviews yet for this product.</p>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-6">
+              {reviews.map((review) => (
+                <div key={review.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="font-bold text-sm">{review.user_name}</p>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star key={star} size={12} className={star <= review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-200"} />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    {review.comment || <span className="italic text-gray-400">No comment provided.</span>}
+                  </p>
+                  <p className="text-[10px] text-gray-400 mt-4 tracking-widest uppercase">
+                    {new Date(review.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

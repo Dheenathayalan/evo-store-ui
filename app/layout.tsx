@@ -28,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={openSans.variable} suppressHydrationWarning>
-      <body className="bg-white text-black">
+      <body className="bg-white text-black" suppressHydrationWarning>
         <Header />
         {children}
         <Footer />

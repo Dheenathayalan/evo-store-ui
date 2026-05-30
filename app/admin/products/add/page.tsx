@@ -7,6 +7,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createProduct, updateProduct, getProductBySlug } from "@/lib/api/products";
 import { getPresignedUrl, uploadFileToS3 } from "@/lib/api/upload";
+import { getCategories } from "@/lib/api/categories";
 import { useAuth } from "@/store/auth";
 import { toast } from "@/store/toast";
 import { X } from "lucide-react";
@@ -16,9 +17,11 @@ export const dynamic = 'force-dynamic';
 /* ------------------ SCHEMA ------------------ */
 const schema = z.object({
   title: z.string().min(2, "Title is required"),
-  brand: z.string().min(1, "Select a brand"),
+  fits: z.string().min(1, "Fit is required"),
   category: z.string().min(1, "Select a category"),
+  subcategory: z.string().optional(),
   description: z.string().min(5, "Description required"),
+  details_and_care: z.string().optional(),
   base_price: z
     .string()
     .min(1, "Price required")
@@ -29,8 +32,6 @@ const schema = z.object({
   multi_buy_discount_amount: z.string().optional(),
 });
 
-const brands = ["YourBrand", "Nike", "Adidas"];
-const categories = ["tops", "bottoms", "accessories"];
 const sizesList = ["XS", "S", "M", "L", "XL", "2XL"];
 
 /* ------------------ PAGE ------------------ */
@@ -56,13 +57,33 @@ function AddProductContent() {
     handleSubmit,
     formState: { errors },
     setValue,
+    watch,
   } = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema) });
 
+  const [categoriesData, setCategoriesData] = useState<any[]>([]);
   const [sizes, setSizes] = useState<string[]>([]);
   const [colors, setColors] = useState<any[]>([]);
   const [variants, setVariants] = useState<any[]>([]);
   const [variantErrors, setVariantErrors] = useState<boolean[]>([]);
-  const [colorInput, setColorInput] = useState({ name: "", value: "#000000", design_color: "" });
+  const [colorInput, setColorInput] = useState({ name: "", value: "#000000" });
+  const [designColors, setDesignColors] = useState<any[]>([]);
+  const [designColorInput, setDesignColorInput] = useState({ name: "", value: "#000000" });
+  interface DetailAssetItem {
+    type: "image" | "video";
+    src: string;
+    label: string;
+    description: string;
+    file?: File;
+  }
+  const [detailAssets, setDetailAssets] = useState<DetailAssetItem[]>([]);
+  const [newAsset, setNewAsset] = useState<{ type: "image" | "video"; label: string; description: string; file: File | null; preview: string }>({
+    type: "image",
+    label: "",
+    description: "",
+    file: null,
+    preview: "",
+  });
+
   const [images, setImages] = useState<string[]>([]);
   const [imageFiles, setImageFiles] = useState<{ file: File; preview: string }[]>([]);
   const [thumbnail, setThumbnail] = useState<string | null>(null);
@@ -85,7 +106,19 @@ function AddProductContent() {
     return () => clearTimeout(timer);
   }, [isLoadingProduct]);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const res: any = await getCategories();
+      setCategoriesData(res.data ?? res);
+    } catch (err) {
+      console.error("Failed to load categories", err);
+    }
+  };
 
   useEffect(() => {
     if (mounted && (!isLoggedIn() || !isAdmin)) {
@@ -106,9 +139,11 @@ function AddProductContent() {
 
         // Populate form fields
         setValue("title", data.title);
-        setValue("brand", data.brand);
+        setValue("fits", data.fits || "");
         setValue("category", data.category);
+        if (data.subcategory) setValue("subcategory", data.subcategory);
         setValue("description", data.description);
+        if (data.details_and_care) setValue("details_and_care", data.details_and_care);
         setValue("base_price", String(data.base_price)); // Convert number to string for form
         setValue("showInLanding", data.showInLanding || false);
         setValue("discount_percentage", data.discount_percentage ? String(data.discount_percentage) : "0");
@@ -118,6 +153,11 @@ function AddProductContent() {
         // Set colors
         if (data.attributes?.colors) {
           setColors(data.attributes.colors);
+        }
+
+        // Set design colors
+        if (data.attributes?.design_colors) {
+          setDesignColors(data.attributes.design_colors);
         }
 
         // Set sizes
@@ -135,6 +175,11 @@ function AddProductContent() {
           setThumbnail(data.landing_thumbnail);
         }
 
+        // Set detailAssets
+        if (data.detailAssets) {
+          setDetailAssets(data.detailAssets);
+        }
+
         // Generate variants
         if (data.attributes?.sizes && data.attributes?.colors) {
           const newVariants = [];
@@ -146,7 +191,6 @@ function AddProductContent() {
               newVariants.push({
                 size,
                 product_color: color.name,
-                design_color: color.design_color || "",
                 stock: existing?.stock || 0,
                 price: existing?.price || 0,
                 sku: existing?.sku || `${data._id || data.slug}-${color.name}-${size}`,
@@ -176,7 +220,6 @@ function AddProductContent() {
         newVariants.push({
           size,
           product_color: color.name,
-          design_color: color.design_color || "",
           stock: existing?.stock || 0,
           price: existing?.price || 0,
           sku: existing?.sku || `${productId || 'temp'}-${color.name}-${size}`,
@@ -185,6 +228,10 @@ function AddProductContent() {
     });
     setVariants(newVariants);
   }, [sizes, colors, productId]);
+
+  const selectedCategory = watch("category");
+  const currentCategoryData = categoriesData.find((c) => c.name === selectedCategory);
+  const availableSubcategories = currentCategoryData?.subcategories || [];
 
   // Prevent flicker: show blank background until hydration is finished
   if (!mounted) {
@@ -212,10 +259,18 @@ function AddProductContent() {
   const addColor = () => {
     if (!colorInput.name) return;
     setColors((prev) => [...prev, colorInput]);
-    setColorInput({ name: "", value: "#000000", design_color: "" });
+    setColorInput({ name: "", value: "#000000" });
   };
   const removeColor = (index: number) =>
     setColors((prev) => prev.filter((_, i) => i !== index));
+
+  const addDesignColor = () => {
+    if (!designColorInput.name) return;
+    setDesignColors((prev) => [...prev, designColorInput]);
+    setDesignColorInput({ name: "", value: "#000000" });
+  };
+  const removeDesignColor = (index: number) =>
+    setDesignColors((prev) => prev.filter((_, i) => i !== index));
 
   /* ------------------ IMAGE ------------------ */
   const handleImageUpload = (files: FileList | null) => {
@@ -245,6 +300,25 @@ function AddProductContent() {
   const removeThumbnail = () => {
     setThumbnail(null);
     setThumbnailFile(null);
+  };
+
+  const addDetailAsset = () => {
+    if (!newAsset.file || !newAsset.label || !newAsset.description) return;
+    setDetailAssets((prev) => [
+      ...prev,
+      {
+        type: newAsset.type,
+        src: newAsset.preview,
+        label: newAsset.label,
+        description: newAsset.description,
+        file: newAsset.file,
+      },
+    ]);
+    setNewAsset({ type: "image", label: "", description: "", file: null, preview: "" });
+  };
+
+  const removeDetailAsset = (index: number) => {
+    setDetailAssets((prev) => prev.filter((_, i) => i !== index));
   };
 
 
@@ -287,20 +361,48 @@ function AddProductContent() {
 
       const finalImages = [...existingUrls, ...uploadedUrls];
 
+      // 3. Upload Detail Assets if new files
+      const finalDetailAssets: any[] = [];
+      for (const asset of detailAssets) {
+        if (asset.file) {
+          const presigned: any = await getPresignedUrl(asset.file.name, asset.file.type, s3ProductId, "details");
+          const presignedData = presigned.data ?? presigned;
+          await uploadFileToS3(presignedData.upload_url, asset.file);
+          finalDetailAssets.push({
+            type: asset.type,
+            src: presignedData.file_url,
+            label: asset.label,
+            description: asset.description,
+          });
+        } else {
+          finalDetailAssets.push({
+            type: asset.type,
+            src: asset.src,
+            label: asset.label,
+            description: asset.description,
+          });
+        }
+      }
+
       const payload = {
         title: data.title,
-        brand: data.brand,
+        fits: data.fits,
         category: data.category,
+        subcategory: data.subcategory || null,
         description: data.description,
+        details_and_care: data.details_and_care || null,
         base_price: Number(data.base_price),
         showInLanding: data.showInLanding || false,
         discount_percentage: Number(data.discount_percentage) || 0,
         multi_buy_threshold: Number(data.multi_buy_threshold) || 0,
         multi_buy_discount_amount: Number(data.multi_buy_discount_amount) || 0,
-        attributes: { colors: colors.map((c) => ({ name: c.name, value: c.value, design_color: c.design_color || null })), sizes },
+        attributes: {
+          colors: colors.map((c) => ({ name: c.name, value: c.value })),
+          design_colors: designColors.map((c) => ({ name: c.name, value: c.value })),
+          sizes,
+        },
         variants: variants.map((v) => ({
           product_color: v.product_color,
-          design_color: v.design_color || null,
           size: v.size,
           price: Number(v.price),
           stock: Number(v.stock),
@@ -308,6 +410,7 @@ function AddProductContent() {
         })),
         images: finalImages,
         landing_thumbnail: finalThumbnail,
+        detailAssets: finalDetailAssets,
       };
 
       let res: any;
@@ -315,6 +418,7 @@ function AddProductContent() {
         res = await updateProduct(editSlug, payload);
         setImageFiles([]); // Clear pending files, keep saved URLs
         setThumbnailFile(null);
+        setDetailAssets(finalDetailAssets); // Keep saved URLs, clear file objects
         setSuccessMsg("Product updated successfully ✓");
         setTimeout(() => setSuccessMsg(null), 4000);
       } else {
@@ -348,17 +452,20 @@ function AddProductContent() {
               <input {...register("title")} className="input" />
             </Field>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label="Brand" error={errors.brand?.message}>
-                <select {...register("brand")} className="input">
-                  <option value="">Select Brand</option>
-                  {brands.map((b) => <option key={b}>{b}</option>)}
-                </select>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Field label="Fits" error={errors.fits?.message}>
+                <input placeholder="e.g. Oversized Fit" {...register("fits")} className="input" />
               </Field>
               <Field label="Category" error={errors.category?.message}>
                 <select {...register("category")} className="input">
                   <option value="">Select Category</option>
-                  {categories.map((c) => <option key={c}>{c}</option>)}
+                  {categoriesData.map((c) => <option key={c._id} value={c.name}>{c.name}</option>)}
+                </select>
+              </Field>
+              <Field label="Subcategory" error={errors.subcategory?.message}>
+                <select {...register("subcategory")} className="input" disabled={availableSubcategories.length === 0}>
+                  <option value="">Select Subcategory</option>
+                  {availableSubcategories.map((sub: string) => <option key={sub} value={sub}>{sub}</option>)}
                 </select>
               </Field>
             </div>
@@ -369,6 +476,10 @@ function AddProductContent() {
 
             <Field label="Description" error={errors.description?.message}>
               <textarea {...register("description")} className="input h-28" />
+            </Field>
+
+            <Field label="Details & Care" error={errors.details_and_care?.message}>
+              <textarea {...register("details_and_care")} className="input h-28" placeholder="Product details and care instructions..." />
             </Field>
 
             <Field label="Show in Landing">
@@ -467,12 +578,6 @@ function AddProductContent() {
                 />
               </div>
               <div className="flex flex-wrap gap-2 mb-3">
-                <input
-                  placeholder="Design Color (optional, e.g. Red Stripe)"
-                  className="input flex-1 min-w-[160px]"
-                  value={colorInput.design_color}
-                  onChange={(e) => setColorInput({ ...colorInput, design_color: e.target.value })}
-                />
                 <button type="button" onClick={addColor} className="btn whitespace-nowrap">
                   + Add
                 </button>
@@ -481,12 +586,145 @@ function AddProductContent() {
                 {colors.map((c, i) => (
                   <div key={i} className="chip flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full shrink-0" style={{ background: c.value }} />
-                    <span className="text-xs">{c.name}{c.design_color ? ` / ${c.design_color}` : ""}</span>
+                    <span className="text-xs">{c.name}</span>
                     <button type="button" onClick={() => removeColor(i)} className="text-gray-400 hover:text-black">✕</button>
                   </div>
                 ))}
               </div>
             </div>
+
+            {/* Design Color */}
+            <div>
+              <p className="label">Design Color</p>
+              <div className="flex flex-wrap gap-2 mb-2">
+                <input
+                  placeholder="Design Color Name (e.g. Gold Accent)"
+                  className="input flex-1 min-w-[120px]"
+                  value={designColorInput.name}
+                  onChange={(e) => setDesignColorInput({ ...designColorInput, name: e.target.value })}
+                />
+                <input
+                  type="color"
+                  className="h-11 w-12 border cursor-pointer rounded"
+                  value={designColorInput.value}
+                  onChange={(e) => setDesignColorInput({ ...designColorInput, value: e.target.value })}
+                />
+              </div>
+              <div className="flex flex-wrap gap-2 mb-3">
+                <button type="button" onClick={addDesignColor} className="btn whitespace-nowrap">
+                  + Add
+                </button>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {designColors.map((c, i) => (
+                  <div key={i} className="chip flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full shrink-0" style={{ background: c.value }} />
+                    <span className="text-xs">{c.name}</span>
+                    <button type="button" onClick={() => removeDesignColor(i)} className="text-gray-400 hover:text-black">✕</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ── DETAIL ASSETS (full width) ── */}
+          <div className="col-span-1 md:col-span-2 border-t pt-6 mt-4">
+            <div className="mb-4">
+              <p className="label text-sm">Product Detail Assets (Media & Feature Highlights)</p>
+              <p className="text-xs text-gray-500">Add videos or images with descriptive labels to showcase premium construction, fabric, and fit on the product details page.</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 p-4 bg-gray-50 rounded border border-gray-200 mb-6 items-end">
+              <div>
+                <p className="label">Asset Type</p>
+                <select
+                  value={newAsset.type}
+                  onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value as "image" | "video" })}
+                  className="input bg-white text-xs py-2"
+                >
+                  <option value="image">Image</option>
+                  <option value="video">Video</option>
+                </select>
+              </div>
+
+              <div>
+                <p className="label">File ({newAsset.type})</p>
+                <input
+                  key={newAsset.preview || "empty"}
+                  type="file"
+                  accept={newAsset.type === "video" ? "video/*" : "image/*"}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setNewAsset({ ...newAsset, file, preview: URL.createObjectURL(file) });
+                    }
+                  }}
+                  className="input bg-white text-xs py-1.5"
+                />
+              </div>
+
+              <div>
+                <p className="label">Label / Title</p>
+                <input
+                  placeholder="e.g. PREMIUM CONSTRUCTION"
+                  value={newAsset.label}
+                  onChange={(e) => setNewAsset({ ...newAsset, label: e.target.value })}
+                  className="input bg-white text-xs py-2"
+                />
+              </div>
+
+              <div>
+                <p className="label">Description</p>
+                <input
+                  placeholder="e.g. Expertly crafted for durability."
+                  value={newAsset.description}
+                  onChange={(e) => setNewAsset({ ...newAsset, description: e.target.value })}
+                  className="input bg-white text-xs py-2"
+                />
+              </div>
+
+              <div className="sm:col-span-4 flex justify-end mt-2">
+                <button
+                  type="button"
+                  onClick={addDetailAsset}
+                  disabled={!newAsset.file || !newAsset.label || !newAsset.description}
+                  className="btn disabled:opacity-40 disabled:cursor-not-allowed text-xs px-4 py-2"
+                >
+                  + Add Asset
+                </button>
+              </div>
+            </div>
+
+            {detailAssets.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+                {detailAssets.map((asset, i) => (
+                  <div key={i} className="relative border border-gray-200 rounded p-3 bg-white shadow-sm flex flex-col justify-between group">
+                    <button
+                      type="button"
+                      onClick={() => removeDetailAsset(i)}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 shadow opacity-0 group-hover:opacity-100 transition hover:bg-red-600 z-10"
+                      title="Remove asset"
+                    >
+                      <X size={14} />
+                    </button>
+                    <div className="aspect-[4/5] w-full rounded overflow-hidden bg-gray-100 mb-3 relative">
+                      {asset.type === "video" ? (
+                        <video src={asset.src} className="w-full h-full object-cover" controls preload="metadata" />
+                      ) : (
+                        <img src={asset.src} alt={asset.label} className="w-full h-full object-cover" />
+                      )}
+                      <span className="absolute top-2 left-2 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
+                        {asset.type}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wider text-black mb-1">{asset.label}</p>
+                      <p className="text-xs text-gray-600 leading-snug line-clamp-2">{asset.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* ── VARIANTS (full width, scrollable on mobile) ── */}
@@ -499,7 +737,6 @@ function AddProductContent() {
                     <tr>
                       <th className="text-left px-4 py-3 font-medium">Size</th>
                       <th className="text-left px-4 py-3 font-medium">Product Color</th>
-                      <th className="text-left px-4 py-3 font-medium">Design Color</th>
                       <th className="text-left px-4 py-3 font-medium">Stock</th>
                       <th className="text-left px-4 py-3 font-medium">Price</th>
                     </tr>
@@ -509,7 +746,6 @@ function AddProductContent() {
                       <tr key={i} className={`border-t ${variantErrors[i] ? "bg-red-50" : ""}`}>
                         <td className="px-4 py-3">{v.size}</td>
                         <td className="px-4 py-3">{v.product_color}</td>
-                        <td className="px-4 py-3 text-gray-400 text-xs">{v.design_color || "—"}</td>
                         <td className="px-4 py-2">
                           <input
                             type="number" min="0" value={v.stock || ""} placeholder="0"

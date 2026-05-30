@@ -40,6 +40,8 @@ export default function AddressesPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
+  const [addressToDelete, setAddressToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -120,14 +122,22 @@ export default function AddressesPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this address?")) return;
+  const handleDelete = (id: string) => {
+    setAddressToDelete(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!addressToDelete) return;
+    setIsDeleting(true);
     try {
-      await deleteAddress(id);
-      setAddresses(prev => prev.filter(a => a.id !== id));
+      await deleteAddress(addressToDelete);
+      setAddresses(prev => prev.filter(a => a.id !== addressToDelete));
       toast.success("Address removed");
     } catch (err) {
       toast.error("Failed to delete address");
+    } finally {
+      setIsDeleting(false);
+      setAddressToDelete(null);
     }
   };
 
@@ -144,16 +154,12 @@ export default function AddressesPage() {
   if (!mounted || !isLoggedIn()) return <div className="min-h-screen bg-[#f5f5f5]" />;
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] pb-20">
-      {/* Header */}
-      <div className="bg-white border-b sticky top-0 z-30 px-6 py-4 flex items-center gap-4 shadow-sm">
-        <button onClick={() => router.back()} className="p-2 -ml-2 text-gray-500 hover:text-black transition-colors">
-          <ChevronLeft size={24} />
-        </button>
-        <h1 className="text-lg font-bold tracking-tight">Shipping Addresses</h1>
-      </div>
-
-      <div className="max-w-2xl mx-auto px-6 pt-8 space-y-6">
+    <div className="min-h-screen bg-[#f5f5f5] p-4 sm:p-6 md:p-10 pb-20">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold">Shipping Addresses</h1>
+          <p className="text-gray-500 text-sm mt-1">Saved addresses for delivery</p>
+        </div>
         {/* Add Button */}
         <button 
           onClick={() => {
@@ -364,6 +370,35 @@ export default function AddressesPage() {
               >
                 {submitting && <Loader2 className="animate-spin" size={18} />}
                 {submitting ? "SAVING..." : (editingAddress ? "UPDATE ADDRESS" : "SAVE ADDRESS")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {addressToDelete && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-bold mb-2">Delete Address?</h3>
+            <p className="text-gray-500 text-sm mb-8 leading-relaxed">
+              Are you sure you want to remove this address? This action cannot be undone.
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setAddressToDelete(null)}
+                disabled={isDeleting}
+                className="flex-1 py-3 text-sm font-bold tracking-widest text-gray-500 hover:text-black uppercase transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="flex-1 py-3 bg-red-600 text-white rounded-xl text-sm font-bold tracking-widest uppercase hover:bg-red-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {isDeleting ? <Loader2 size={16} className="animate-spin" /> : null}
+                {isDeleting ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>

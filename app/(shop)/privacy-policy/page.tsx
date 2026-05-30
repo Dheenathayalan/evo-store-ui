@@ -15,7 +15,7 @@ export default function PrivacyPolicyPage() {
             PRIVACY POLICY
           </h1>
           <p className="text-gray-500 text-sm tracking-[0.2em] mb-16 text-center uppercase">
-            Last Updated: April 16, 2026
+            Last Updated: May 23, 2026
           </p>
 
           <div className="space-y-16 text-gray-300 leading-relaxed tracking-wide font-light">
@@ -28,8 +28,14 @@ export default function PrivacyPolicyPage() {
                 We do not sell or share your personal information with third parties except as required for order fulfillment and legal compliance.
                 All transactions are secured using trusted payment gateways.
               </p>
-              <p className="text-white/70 italic">
+              <p className="mb-6 text-white/70 italic">
                 By using our website, you agree to our privacy practices.
+              </p>
+              <p className="mb-6">
+                Welcome to EVO Carlton Trends. We respect your privacy and are committed to protecting your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website.
+              </p>
+              <p className="text-white/70 italic">
+                By using our website, you agree to the terms of this Privacy Policy.
               </p>
             </section>
 
@@ -42,9 +48,8 @@ export default function PrivacyPolicyPage() {
                     <ul className="space-y-3 text-sm opacity-70 list-none border-l border-white/20 pl-4">
                       <li>Full Name</li>
                       <li>Email Address</li>
-                      <li>Phone Number</li>
                       <li>Shipping and Billing Address</li>
-                      <li>Payment Details</li>
+                      <li>Payment Details (processed securely via third-party payment gateways)</li>
                     </ul>
                   </div>
                   <div>
@@ -53,7 +58,7 @@ export default function PrivacyPolicyPage() {
                       <li>Browser type</li>
                       <li>IP address</li>
                       <li>Device information</li>
-                      <li>Browsing behavior</li>
+                      <li>Pages visited and time spent on the website</li>
                     </ul>
                   </div>
                 </div>
@@ -73,7 +78,7 @@ export default function PrivacyPolicyPage() {
                   "To process and deliver your orders",
                   "To communicate order updates and support queries",
                   "To improve our website and customer experience",
-                  "To send promotional emails (opt-in only)",
+                  "To send promotional emails or offers (only if you opt-in)",
                   "To detect and prevent fraudulent transactions"
                 ].map((item, i) => (
                   <div key={i} className="flex items-start gap-4">
@@ -134,31 +139,37 @@ export default function PrivacyPolicyPage() {
             <div className="grid md:grid-cols-3 gap-10">
               <section className="md:col-span-1">
                 <h3 className="text-sm text-white tracking-[0.2em] mb-4 uppercase">7. Third-Party Links</h3>
-                <p className="text-xs opacity-60 leading-relaxed">We are not responsible for the privacy practices of linked third-party websites.</p>
+                <p className="text-xs opacity-60 leading-relaxed">Our website may contain links to third-party websites. We are not responsible for their privacy practices. Please review their policies before sharing information.</p>
               </section>
               <section className="md:col-span-1">
                 <h3 className="text-sm text-white tracking-[0.2em] mb-4 uppercase">8. Data Retention</h3>
-                <p className="text-xs opacity-60 leading-relaxed">We retain data only as long as necessary for orders, legal obligations, and disputes.</p>
+                <p className="text-xs opacity-60 leading-relaxed mb-2">We retain your data only as long as necessary to:</p>
+                <ul className="text-xs opacity-60 leading-relaxed list-disc pl-4 space-y-1">
+                  <li>Fulfill orders</li>
+                  <li>Comply with legal obligations</li>
+                  <li>Resolve disputes</li>
+                </ul>
               </section>
               <section className="md:col-span-1">
                 <h3 className="text-sm text-white tracking-[0.2em] mb-4 uppercase">9. Children’s Privacy</h3>
-                <p className="text-xs opacity-60 leading-relaxed">Our website is not intended for individuals under the age of 18.</p>
+                <p className="text-xs opacity-60 leading-relaxed">Our website is not intended for individuals under the age of 18. We do not knowingly collect personal data from children.</p>
               </section>
             </div>
 
             <section className="pt-16 border-t border-white/10">
+              <h2 className="text-2xl text-white tracking-[0.15em] mb-4 uppercase">10. Changes to This Policy</h2>
+              <p className="opacity-80 text-sm">We may update this Privacy Policy from time to time. Changes will be posted on this page with an updated date.</p>
+            </section>
+
+            <section className="pt-16 border-t border-white/10">
               <h2 className="text-2xl text-white tracking-[0.15em] mb-10 uppercase">11. Contact Us</h2>
               <div className="bg-white/5 p-8 rounded-xl border border-white/5 space-y-6">
-                <p className="opacity-80">If you have any questions about this Privacy Policy, you can reach our team:</p>
+                <p className="opacity-80">If you have any questions about this Privacy Policy, you can contact us:</p>
                 <div className="grid sm:grid-cols-2 gap-10">
                   <div className="space-y-4">
                     <div>
                       <p className="text-xs text-white/40 tracking-widest uppercase mb-1">Email</p>
-                      <p className="text-sm">support@evocarltontrends.com</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-white/40 tracking-widest uppercase mb-1">Phone</p>
-                      <p className="text-sm">+91 6282 036 765</p>
+                      <p className="text-sm">customercare@evocarltontrends.com</p>
                     </div>
                   </div>
                   <div>
@@ -170,6 +181,9 @@ export default function PrivacyPolicyPage() {
                   </div>
                 </div>
               </div>
+              <p className="mt-10 text-white/70 italic text-center">
+                By using EVO Carlton Trends, you consent to this Privacy Policy.
+              </p>
             </section>
 
             <div className="pt-20 text-center">

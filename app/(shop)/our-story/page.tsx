@@ -66,7 +66,7 @@ export default function OurStoryPage() {
               </p>
               <p className="text-gray-500 leading-relaxed font-light">
                 As we grow, we remain committed to evolving with our customers — because true 
-                style never stands still. We don't just follow trends; we define them for the modern individual.
+                style never stands still.
               </p>
             </div>
             <div className="order-1 md:order-2 relative aspect-[4/5] bg-white/5 border border-white/10 overflow-hidden">
@@ -90,6 +90,14 @@ export default function OurStoryPage() {
               EVO Carlton Trends is more than a brand.<br/>
               <span className="text-white/40 italic">It's a lifestyle.</span>
             </h3>
+
+            <div className="mt-16 space-y-3">
+              <h4 className="text-white/90 text-xl font-light tracking-[0.3em] uppercase">EVO Carlton Trends</h4>
+              <p className="text-gray-400 text-xs sm:text-sm tracking-[0.2em] uppercase italic">
+                Driven by Evolution, Defined by Class
+              </p>
+            </div>
+
             <div className="h-[1px] w-20 bg-white/20 mx-auto mt-16" />
           </motion.section>
         </div>

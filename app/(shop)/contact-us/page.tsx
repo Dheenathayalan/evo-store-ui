@@ -58,8 +58,8 @@ export default function ContactUsPage() {
             <div className="space-y-6">
               <h2 className="text-2xl font-light tracking-widest uppercase">Get In Touch</h2>
               <p className="text-gray-500 text-sm leading-relaxed tracking-wide font-light max-w-md">
-                For any queries, support, or feedback, our team is here to assist you. 
-                We aim to respond to all inquiries within 24–48 hours.
+                For any queries, support, or feedback: You can also reach out through our website contact form. 
+                We aim to respond within 24–48 hours.
               </p>
             </div>
 
@@ -70,17 +70,7 @@ export default function ContactUsPage() {
                 </div>
                 <div>
                   <p className="text-[10px] tracking-[0.2em] text-white/30 uppercase mb-1">Email</p>
-                  <p className="text-sm tracking-wide">customercaret@evocarltontrends.com</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-6">
-                <div className="bg-white/5 p-4 rounded-full text-white/40">
-                  <Phone size={20} />
-                </div>
-                <div>
-                  <p className="text-[10px] tracking-[0.2em] text-white/30 uppercase mb-1">Phone</p>
-                  <p className="text-sm tracking-wide">+91 6282 036 765</p>
+                  <p className="text-sm tracking-wide">customercare@evocarltontrends.com</p>
                 </div>
               </div>
 
