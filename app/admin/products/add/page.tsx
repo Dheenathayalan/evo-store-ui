@@ -311,7 +311,7 @@ function AddProductContent() {
         src: newAsset.preview,
         label: newAsset.label,
         description: newAsset.description,
-        file: newAsset.file,
+        file: newAsset.file || undefined,
       },
     ]);
     setNewAsset({ type: "image", label: "", description: "", file: null, preview: "" });
