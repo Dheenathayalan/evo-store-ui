@@ -32,3 +32,7 @@ export const deleteAddress = (addressId: string) => {
 export const getAllUsersAdmin = () => {
     return api.get("/users/admin/active");
 };
+
+export const updateUserStatusAdmin = (userId: string, isActive: boolean) => {
+    return api.put(`/users/admin/${userId}/status`, { is_active: isActive });
+};

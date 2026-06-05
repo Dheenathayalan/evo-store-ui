@@ -26,6 +26,7 @@ export default function ProductDetails() {
   const [error, setError] = useState<string | null>(null);
   const [size, setSize] = useState<string>("");
   const [color, setColor] = useState<string>(""); // product_color name, matches variant.product_color
+  const [designColor, setDesignColor] = useState<string>(""); // design color name
   const [hoveredColor, setHoveredColor] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -327,12 +328,20 @@ export default function ProductDetails() {
           {designColors.length > 0 && (
             <div className="mb-6">
               <p className="text-xs text-gray-500 tracking-widest uppercase mb-2">Design Color</p>
-              <div className="flex gap-3">
+              <div className="flex gap-3 flex-wrap">
                 {designColors.map((c, i) => (
-                  <div key={i} className="relative flex items-center gap-2 border border-[#cbcbcb] rounded px-3 py-1.5 bg-gray-50/50">
+                  <button 
+                    key={i} 
+                    onClick={() => setDesignColor(designColor === c.name ? "" : c.name)}
+                    className={`relative flex items-center gap-2 border rounded px-3 py-1.5 transition-colors ${
+                      designColor === c.name 
+                        ? "border-black bg-gray-100" 
+                        : "border-[#cbcbcb] bg-gray-50/50 hover:border-gray-400"
+                    }`}
+                  >
                     <div className="w-4 h-4 rounded-full border border-gray-300 shadow-sm" style={{ backgroundColor: c.value }} />
-                    <span className="text-xs font-medium text-gray-700">{c.name}</span>
-                  </div>
+                    <span className={`text-xs font-medium ${designColor === c.name ? "text-black" : "text-gray-700"}`}>{c.name}</span>
+                  </button>
                 ))}
               </div>
             </div>
@@ -395,6 +404,10 @@ export default function ProductDetails() {
                   toast.error("Please select size and color");
                   return;
                 }
+                if (designColors.length > 0 && !designColor) {
+                  toast.error("Please select a design color");
+                  return;
+                }
 
                 try {
                   // Use the selected variant's SKU
@@ -403,7 +416,7 @@ export default function ProductDetails() {
                     toast.error("This variant is currently unavailable.");
                     return;
                   }
-                  await addItemToCart(sku, quantity);
+                  await addItemToCart(sku, quantity, designColor);
                   toast.success("Added to cart!");
 
                   // Open cart drawer
@@ -436,6 +449,10 @@ export default function ProductDetails() {
                     toast.error("Please select size and color");
                     return;
                   }
+                  if (designColors.length > 0 && !designColor) {
+                    toast.error("Please select a design color");
+                    return;
+                  }
 
                   try {
                     // Use the selected variant's SKU
@@ -444,7 +461,7 @@ export default function ProductDetails() {
                       toast.error("This variant is currently unavailable.");
                       return;
                     }
-                    await addItemToCart(sku, quantity);
+                    await addItemToCart(sku, quantity, designColor);
 
                     // Redirect to checkout
                     router.push("/checkout");

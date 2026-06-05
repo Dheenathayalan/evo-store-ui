@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
 /* ------------------ SCHEMA ------------------ */
 const schema = z.object({
   title: z.string().min(2, "Title is required"),
-  fits: z.string().min(1, "Fit is required"),
+  fits: z.string().optional(),
   category: z.string().min(1, "Select a category"),
   subcategory: z.string().optional(),
   description: z.string().min(5, "Description required"),
@@ -92,7 +92,6 @@ function AddProductContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingProduct, setIsLoadingProduct] = useState(!!editSlug);
   const [showSpinner, setShowSpinner] = useState(false);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // For very fast fetches, we don't want to flash the spinner.
   // We only show it if loading takes longer than 200ms.
@@ -419,13 +418,12 @@ function AddProductContent() {
         setImageFiles([]); // Clear pending files, keep saved URLs
         setThumbnailFile(null);
         setDetailAssets(finalDetailAssets); // Keep saved URLs, clear file objects
-        setSuccessMsg("Product updated successfully ✓");
-        setTimeout(() => setSuccessMsg(null), 4000);
+        toast.success("Product updated successfully");
       } else {
         res = await createProduct(payload);
         const data = res?.data ?? res;
         const newSlug = data?.slug;
-        toast.success(editSlug ? "Product updated" : "Product created");
+        toast.success("Product created successfully");
         if (newSlug) router.replace(`/admin/products/add?edit=${newSlug}`);
       }
     } catch (err: any) {
@@ -783,9 +781,7 @@ function AddProductContent() {
                 ⚠ Please enter a price for all variants before saving.
               </p>
             )}
-            {successMsg && (
-              <p className="text-green-600 text-sm mb-3 font-medium">✓ {successMsg}</p>
-            )}
+
             <button
               type="submit"
               onClick={(e) => { e.preventDefault(); handleSubmit(onSubmit)(); }}

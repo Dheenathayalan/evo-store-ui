@@ -12,6 +12,7 @@ export default function AdminCouponsPage() {
   const [eligibleUsers, setEligibleUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [sortBy, setSortBy] = useState<string>("newest");
 
   const [formData, setFormData] = useState({
     code: "",
@@ -250,8 +251,22 @@ export default function AdminCouponsPage() {
               <div className="flex items-center gap-2">
                 <Tag size={20} className="text-black" />
                 <h2 className="font-bold uppercase tracking-widest text-xs">Issued Coupons Overview</h2>
+                <span className="text-xs text-gray-500 font-medium ml-2">({coupons.length})</span>
               </div>
-              <span className="text-xs text-gray-500 font-medium">{coupons.length} total coupons</span>
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Sort By</span>
+                <select 
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="bg-gray-50 border border-gray-200 text-xs rounded-lg px-2 py-1.5 outline-none focus:border-black"
+                >
+                  <option value="newest">Default (Newest)</option>
+                  <option value="expiry_asc">Expiry Date (Soonest)</option>
+                  <option value="expiry_desc">Expiry Date (Latest)</option>
+                  <option value="usage_desc">Usage Count (High to Low)</option>
+                  <option value="usage_asc">Usage Count (Low to High)</option>
+                </select>
+              </div>
             </div>
 
             {loading ? (
@@ -266,7 +281,13 @@ export default function AdminCouponsPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {coupons.map((c) => {
+                {[...coupons].sort((a, b) => {
+                  if (sortBy === "expiry_asc") return new Date(a.expiry_date).getTime() - new Date(b.expiry_date).getTime();
+                  if (sortBy === "expiry_desc") return new Date(b.expiry_date).getTime() - new Date(a.expiry_date).getTime();
+                  if (sortBy === "usage_desc") return (b.used_count || 0) - (a.used_count || 0);
+                  if (sortBy === "usage_asc") return (a.used_count || 0) - (b.used_count || 0);
+                  return 0; // Default order (usually newest from backend)
+                }).map((c) => {
                   const isExpired = new Date(c.expiry_date) < new Date();
                   return (
                     <div key={c._id} className="p-5 bg-gray-50/80 rounded-xl border border-gray-100 hover:border-gray-200 transition">

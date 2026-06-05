@@ -373,12 +373,22 @@ export default function CheckoutPage() {
             <div className="space-y-4 mb-6 max-h-[300px] overflow-y-auto pr-2 no-scrollbar">
               {items.map((item: any) => (
                 <div key={item.id} className="flex gap-4">
-                  <div className="w-12 h-16 bg-gray-50 rounded flex-shrink-0">
-                    <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
+                  <div className="w-12 h-16 bg-gray-50 rounded flex-shrink-0 overflow-hidden">
+                    {item.image && !item.image.includes("placeholder") ? (
+                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1 text-xs">
                     <p className="font-bold truncate">{item.name}</p>
-                    <p className="text-gray-400">{item.color} / {item.size}</p>
+                    <p className="text-gray-400">
+                      {item.color} / {item.size} {item.designColor ? `/ Design: ${item.designColor}` : ""}
+                    </p>
                     <p className="mt-1 font-semibold">{item.qty} × ₹{item.price.toLocaleString("en-IN")}</p>
                   </div>
                 </div>

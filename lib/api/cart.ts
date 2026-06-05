@@ -28,17 +28,20 @@ export const getCart = async () => {
   });
 };
 
-export const addToCart = async (sku: string, quantity: number) => {
+export const addToCart = async (sku: string, quantity: number, designColor?: string) => {
   const { isLoggedIn } = useAuth.getState();
   const body: any = { sku, quantity };
+  if (designColor) body.design_color = designColor;
   if (!isLoggedIn()) body.user_id = getGuestUserId();
   
   return api.post("/cart/add", body);
 };
 
-export const removeFromCart = async (sku: string) => {
+export const removeFromCart = async (sku: string, designColor?: string) => {
   const { isLoggedIn } = useAuth.getState();
-  const params = !isLoggedIn() ? { user_id: getGuestUserId() } : {};
+  const params: any = {};
+  if (!isLoggedIn()) params.user_id = getGuestUserId();
+  if (designColor) params.design_color = designColor;
   
   return api.delete(`/cart/${sku}`, { params });
 };

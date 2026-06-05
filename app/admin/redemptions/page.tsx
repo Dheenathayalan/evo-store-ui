@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getAdminRedemptions, payoutRedemption } from "@/lib/api/coupon";
+import { getAdminRedemptions, payoutRedemption, revertRedemption } from "@/lib/api/coupon";
 import { toast } from "@/store/toast";
 import { CreditCard, CheckCircle, Clock } from "lucide-react";
 
@@ -34,6 +34,19 @@ export default function RedemptionsAdminPage() {
       await fetchRedemptions();
     } catch (err: any) {
       toast.error(err.response?.data?.detail || "Failed to mark payout");
+    } finally {
+      setPayingOutId(null);
+    }
+  };
+
+  const handleRevert = async (couponCode: string, orderId: string) => {
+    try {
+      setPayingOutId(orderId + "-revert");
+      await revertRedemption(couponCode, orderId);
+      toast.success("Payout reverted successfully!");
+      await fetchRedemptions();
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Failed to revert payout");
     } finally {
       setPayingOutId(null);
     }
@@ -96,9 +109,18 @@ export default function RedemptionsAdminPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       {r.status === "Redeemed" ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-500 rounded-lg text-xs font-bold uppercase tracking-wider">
-                          <CheckCircle size={14} /> Paid Out
-                        </span>
+                        <div className="flex items-center justify-end gap-3">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-500 rounded-lg text-xs font-bold uppercase tracking-wider">
+                            <CheckCircle size={14} /> Paid Out
+                          </span>
+                          <button
+                            onClick={() => handleRevert(r.coupon_code, r.order_id)}
+                            disabled={payingOutId === r.order_id + "-revert"}
+                            className="text-xs font-bold uppercase tracking-wider text-red-500 hover:text-red-700 transition disabled:opacity-50"
+                          >
+                            Revert
+                          </button>
+                        </div>
                       ) : (
                         <button
                           onClick={() => handlePayout(r.coupon_code, r.order_id)}

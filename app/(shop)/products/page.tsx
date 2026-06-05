@@ -23,10 +23,11 @@ function ProductList() {
 
   // Filter & Sort State
   const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<string>(""); // price_asc, price_desc
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [availableFilters, setAvailableFilters] = useState<{ categories: string[], colors: string[] }>({ categories: [], colors: [] });
+  const [availableFilters, setAvailableFilters] = useState<{ categories: string[], subcategories: string[], colors: string[] }>({ categories: [], subcategories: [], colors: [] });
 
   const observerTarget = useRef<HTMLDivElement | null>(null);
 
@@ -42,7 +43,7 @@ function ProductList() {
         const colorsParam = selectedColors.join(",");
         const res: any = searchQuery.trim()
           ? await searchProducts(searchQuery.trim(), LIMIT)
-          : await getProducts(LIMIT, undefined, selectedCategory, colorsParam, sortBy);
+          : await getProducts(LIMIT, undefined, selectedCategory, selectedSubcategory, colorsParam, sortBy);
 
         const items: any[] = Array.isArray(res) ? res : (res?.data ?? []);
         setProducts(items);
@@ -63,7 +64,7 @@ function ProductList() {
     };
 
     fetchInitial();
-  }, [searchQuery, selectedCategory, selectedColors, sortBy]);
+  }, [searchQuery, selectedCategory, selectedSubcategory, selectedColors, sortBy]);
 
   useEffect(() => {
     const fetchFilters = async () => {
@@ -85,7 +86,7 @@ function ProductList() {
       const colorsParam = selectedColors.join(",");
       const res: any = searchQuery.trim()
         ? await searchProducts(searchQuery.trim(), LIMIT, cursor)
-        : await getProducts(LIMIT, cursor, selectedCategory, colorsParam, sortBy);
+        : await getProducts(LIMIT, cursor, selectedCategory, selectedSubcategory, colorsParam, sortBy);
 
       const items: any[] = Array.isArray(res) ? res : (res?.data ?? []);
 
@@ -108,7 +109,7 @@ function ProductList() {
     } finally {
       setLoadingMore(false);
     }
-  }, [loadingMore, hasMore, cursor, loading, searchQuery, selectedCategory, selectedColors, sortBy]);
+  }, [loadingMore, hasMore, cursor, loading, searchQuery, selectedCategory, selectedSubcategory, selectedColors, sortBy]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -148,7 +149,7 @@ function ProductList() {
             onClick={() => setShowMobileFilters(true)}
             className="md:hidden flex items-center gap-2 text-[10px] tracking-widest uppercase font-bold border border-black px-4 py-2 rounded-sm hover:bg-black hover:text-white transition-all"
           >
-            Filters {(selectedCategory || selectedColors.length > 0) && `(${selectedColors.length + (selectedCategory ? 1 : 0)})`}
+            Filters {(selectedCategory || selectedSubcategory || selectedColors.length > 0) && `(${selectedColors.length + (selectedCategory ? 1 : 0) + (selectedSubcategory ? 1 : 0)})`}
           </button>
 
           <select
@@ -169,6 +170,8 @@ function ProductList() {
           <FilterContent 
             selectedCategory={selectedCategory}
             setSelectedCategory={setSelectedCategory}
+            selectedSubcategory={selectedSubcategory}
+            setSelectedSubcategory={setSelectedSubcategory}
             selectedColors={selectedColors}
             setSelectedColors={setSelectedColors}
             sortBy={sortBy}
@@ -189,6 +192,8 @@ function ProductList() {
             <FilterContent 
               selectedCategory={selectedCategory}
               setSelectedCategory={setSelectedCategory}
+              selectedSubcategory={selectedSubcategory}
+              setSelectedSubcategory={setSelectedSubcategory}
               selectedColors={selectedColors}
               setSelectedColors={setSelectedColors}
               sortBy={sortBy}
@@ -234,6 +239,7 @@ function ProductList() {
                 <button
                   onClick={() => {
                     setSelectedCategory("");
+                    setSelectedSubcategory("");
                     setSelectedColors([]);
                     setSortBy("");
                   }}
@@ -258,6 +264,8 @@ function ProductList() {
 function FilterContent({ 
   selectedCategory, 
   setSelectedCategory, 
+  selectedSubcategory,
+  setSelectedSubcategory,
   selectedColors, 
   setSelectedColors, 
   sortBy, 
@@ -265,13 +273,25 @@ function FilterContent({
   availableFilters,
   onFilterClick
 }: any) {
+  const [showAllCategories, setShowAllCategories] = useState(false);
+  const [showAllSubcategories, setShowAllSubcategories] = useState(false);
+  const [showAllColors, setShowAllColors] = useState(false);
+
+  const categories = availableFilters?.categories || [];
+  const subcategories = availableFilters?.subcategories || [];
+  const colors = availableFilters?.colors || [];
+
+  const categoriesToShow = showAllCategories ? categories : categories.slice(0, 5);
+  const subcategoriesToShow = showAllSubcategories ? subcategories : subcategories.slice(0, 5);
+  const colorsToShow = showAllColors ? colors : colors.slice(0, 5);
+
   return (
-    <div className="sticky top-32 space-y-12">
+    <div className="sticky top-32 space-y-12 max-h-[calc(100vh-120px)] overflow-y-auto pb-10 pr-4" style={{ scrollbarWidth: 'thin' }}>
       {/* Category Section */}
       <div>
         <h3 className="text-[10px] tracking-[0.3em] font-bold uppercase mb-6 text-gray-400">Category</h3>
         <div className="flex flex-col gap-4">
-          {availableFilters.categories.map((cat: string) => (
+          {categoriesToShow.map((cat: string) => (
             <button
               key={cat}
               onClick={() => {
@@ -285,6 +305,46 @@ function FilterContent({
               {cat}
             </button>
           ))}
+          {categories.length > 5 && (
+            <button 
+              onClick={() => setShowAllCategories(!showAllCategories)}
+              className="text-[10px] tracking-widest uppercase font-bold text-gray-400 hover:text-black text-left mt-2 transition-colors"
+            >
+              {showAllCategories ? "- Show Less" : "+ Show More"}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Subcategory Section */}
+      <div>
+        <h3 className="text-[10px] tracking-[0.3em] font-bold uppercase mb-6 text-gray-400">Subcategory</h3>
+        <div className="flex flex-col gap-4">
+          {subcategoriesToShow.map((subcat: string) => (
+            <button
+              key={subcat}
+              onClick={() => {
+                setSelectedSubcategory(selectedSubcategory === subcat ? "" : subcat);
+                onFilterClick?.();
+              }}
+              className={`text-left text-xs tracking-widest uppercase transition-colors hover:text-black ${
+                selectedSubcategory === subcat ? "text-black font-bold" : "text-gray-500"
+              }`}
+            >
+              {subcat}
+            </button>
+          ))}
+          {subcategories.length === 0 && (
+            <span className="text-xs text-gray-400 italic">No subcategories available</span>
+          )}
+          {subcategories.length > 5 && (
+            <button 
+              onClick={() => setShowAllSubcategories(!showAllSubcategories)}
+              className="text-[10px] tracking-widest uppercase font-bold text-gray-400 hover:text-black text-left mt-2 transition-colors"
+            >
+              {showAllSubcategories ? "- Show Less" : "+ Show More"}
+            </button>
+          )}
         </div>
       </div>
 
@@ -292,7 +352,7 @@ function FilterContent({
       <div>
         <h3 className="text-[10px] tracking-[0.3em] font-bold uppercase mb-6 text-gray-400">Color</h3>
         <div className="flex flex-col gap-4">
-          {availableFilters.colors.map((clr: string) => (
+          {colorsToShow.map((clr: string) => (
             <button
               key={clr}
               onClick={() => {
@@ -311,13 +371,22 @@ function FilterContent({
               {selectedColors.includes(clr) && <span className="text-[10px]">✕</span>}
             </button>
           ))}
+          {colors.length > 5 && (
+            <button 
+              onClick={() => setShowAllColors(!showAllColors)}
+              className="text-[10px] tracking-widest uppercase font-bold text-gray-400 hover:text-black text-left mt-2 transition-colors"
+            >
+              {showAllColors ? "- Show Less" : "+ Show More"}
+            </button>
+          )}
         </div>
       </div>
 
-      {(selectedCategory || selectedColors.length > 0 || sortBy) && (
+      {(selectedCategory || selectedSubcategory || selectedColors.length > 0 || sortBy) && (
         <button 
           onClick={() => {
             setSelectedCategory("");
+            setSelectedSubcategory("");
             setSelectedColors([]);
             setSortBy("");
             onFilterClick?.();

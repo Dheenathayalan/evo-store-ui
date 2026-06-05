@@ -31,3 +31,7 @@ export const getAdminRedemptions = async () => {
 export const payoutRedemption = async (couponCode: string, orderId: string) => {
   return await client.post("/coupons/admin/redemptions/payout", { coupon_code: couponCode, order_id: orderId });
 };
+
+export const revertRedemption = async (couponCode: string, orderId: string) => {
+  return await client.post("/coupons/admin/redemptions/revert", { coupon_code: couponCode, order_id: orderId });
+};

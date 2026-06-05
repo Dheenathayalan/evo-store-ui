@@ -73,7 +73,7 @@ export default function CartDrawer() {
                   <div className="flex items-start justify-between gap-2">
                     <p className="font-medium leading-snug">{item.name}</p>
                     <button
-                      onClick={() => removeItem(item.id)}
+                      onClick={() => removeItem(item.sku, item.designColor)}
                       disabled={isRemovingFromCart}
                       className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0 mt-0.5 disabled:opacity-40"
                       title="Remove item"
@@ -84,7 +84,7 @@ export default function CartDrawer() {
                     </button>
                   </div>
                   <p className="text-gray-500 text-xs">
-                    {item.color} / {item.size}
+                    {item.color} / {item.size} {item.designColor ? `/ Design: ${item.designColor}` : ""}
                   </p>
 
                   {/* QTY */}

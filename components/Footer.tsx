@@ -63,7 +63,7 @@ export default function Footer(props: any) {
               <Link href="/replacement-policy" className="hover:text-white transition-colors">REPLACEMENT</Link>
             </p>
             <p>
-              <Link href="#">TERMS</Link>
+              <Link href="/terms" className="hover:text-white transition-colors">TERMS</Link>
             </p>
             <p>
               <Link href="/shipping-policy" className="hover:text-white transition-colors">SHIPPING</Link>

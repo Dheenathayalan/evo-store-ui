@@ -15,3 +15,15 @@ export const getUserReview = async (order_id: string, product_slug: string) => {
 export const updateReview = async (review_id: string, data: { rating?: number, comment?: string }) => {
   return await api.put(`/reviews/${review_id}`, data);
 };
+
+export const adminGetAllReviews = async () => {
+  return await api.get('/reviews/admin/all');
+};
+
+export const adminUpdateReview = async (review_id: string, data: { rating?: number, comment?: string }) => {
+  return await api.put(`/reviews/admin/${review_id}`, data);
+};
+
+export const adminDeleteReview = async (review_id: string) => {
+  return await api.delete(`/reviews/admin/${review_id}`);
+};

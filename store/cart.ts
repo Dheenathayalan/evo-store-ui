@@ -12,6 +12,7 @@ interface CartItem {
   color: string;
   size: string;
   sku: string;
+  designColor?: string;
   productId?: string;
   product_slug?: string;
   multi_buy_threshold?: number;
@@ -28,8 +29,8 @@ interface CartState {
   closeCart: () => void;
   increaseQty: (id: string) => Promise<void>;
   decreaseQty: (id: string) => void;
-  removeItem: (id: string) => Promise<void>;
-  addItemToCart: (sku: string, quantity: number) => Promise<void>;
+  removeItem: (id: string, designColor?: string) => Promise<void>;
+  addItemToCart: (sku: string, quantity: number, designColor?: string) => Promise<void>;
   addItem: (item: CartItem) => void;
   setItems: (items: CartItem[]) => void;
   fetchCartItems: () => Promise<void>;
@@ -51,7 +52,7 @@ export const useCart = create<CartState>((set) => ({
     const item = state.items.find((i: any) => i.id === id);
     if (!item) return;
     try {
-      await addToCart(item.sku, 1);
+      await addToCart(item.sku, 1, item.designColor);
       await state.fetchCartItems();
     } catch (err: any) {
       const msg = err?.response?.data?.detail || "Cannot add more — stock limit reached";
@@ -65,7 +66,7 @@ export const useCart = create<CartState>((set) => ({
     
     if (item && item.qty === 1) {
       // If quantity is 1, remove the item instead
-      await state.removeItem(id);
+      await state.removeItem(item.sku, item.designColor);
     } else {
       // Otherwise, decrease quantity
       set((state: any) => ({
@@ -76,12 +77,13 @@ export const useCart = create<CartState>((set) => ({
     }
   },
 
-  removeItem: async (id: string) => {
+  removeItem: async (sku: string, designColor?: string) => {
     set({ isRemovingFromCart: true });
     try {
-      await removeFromCart(id);
+      await removeFromCart(sku, designColor);
+      const targetId = designColor ? `${sku}|${designColor}` : sku;
       set((state: any) => ({
-        items: state.items.filter((item: any) => item.id !== id),
+        items: state.items.filter((item: any) => item.id !== targetId),
         isRemovingFromCart: false,
       }));
     } catch (error) {
@@ -90,10 +92,10 @@ export const useCart = create<CartState>((set) => ({
     }
   },
 
-  addItemToCart: async (sku: string, quantity: number) => {
+  addItemToCart: async (sku: string, quantity: number, designColor?: string) => {
     set({ isAddingToCart: true });
     try {
-      await addToCart(sku, quantity);
+      await addToCart(sku, quantity, designColor);
       // Refresh cart items after adding
       const state = useCart.getState();
       await state.fetchCartItems();
@@ -106,11 +108,12 @@ export const useCart = create<CartState>((set) => ({
 
   addItem: (item: CartItem) =>
     set((state: any) => {
-      const existingItem = state.items.find((i: any) => i.sku === item.sku);
+      const targetId = item.designColor ? `${item.sku}|${item.designColor}` : item.sku;
+      const existingItem = state.items.find((i: any) => i.id === targetId);
       if (existingItem) {
         return {
           items: state.items.map((i: any) =>
-            i.sku === item.sku ? { ...i, qty: i.qty + item.qty } : i,
+            i.id === targetId ? { ...i, qty: i.qty + item.qty } : i,
           ),
         };
       }
@@ -127,13 +130,14 @@ export const useCart = create<CartState>((set) => ({
 
       // Map API response to cart item structure
       const cartItems: CartItem[] = apiItems.map((item: any) => ({
-        id: item.sku,
+        id: item.design_color ? `${item.sku}|${item.design_color}` : item.sku,
         name: item.title,
         price: item.price_snapshot,
         qty: item.quantity,
         image: item.image || "/images/placeholder.jpg",
         color: item.color || "Default",
         size: item.size || "Default",
+        designColor: item.design_color,
         sku: item.sku,
         productId: item.productId,
         product_slug: item.product_slug,

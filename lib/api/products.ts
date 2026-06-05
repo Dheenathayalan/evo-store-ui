@@ -5,10 +5,11 @@ export const createProduct = (payload: any) => {
   return api.post("/products", payload);
 };
 
-export const getProducts = (limit: number = 10, cursor?: string, category?: string, color?: string, sort?: string) => {
+export const getProducts = (limit: number = 10, cursor?: string, category?: string, subcategory?: string, color?: string, sort?: string) => {
   let url = `/products?limit=${limit}`;
   if (cursor) url += `&cursor=${cursor}`;
   if (category) url += `&category=${encodeURIComponent(category)}`;
+  if (subcategory) url += `&subcategory=${encodeURIComponent(subcategory)}`;
   if (color) url += `&color=${encodeURIComponent(color)}`;
   if (sort) url += `&sort=${sort}`;
   return api.get(url);

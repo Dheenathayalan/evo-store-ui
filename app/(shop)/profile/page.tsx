@@ -16,7 +16,8 @@ import {
   PlusSquare,
   List,
   Tag,
-  CreditCard
+  CreditCard,
+  MessageSquare
 } from "lucide-react";
 
 
@@ -85,6 +86,12 @@ const adminMenuItems = [
     label: "Redemptions",
     sub: "Process reward payouts via UPI",
     href: "/admin/redemptions",
+  },
+  {
+    icon: MessageSquare,
+    label: "Reviews",
+    sub: "Manage customer reviews",
+    href: "/admin/reviews",
   },
 ];
 

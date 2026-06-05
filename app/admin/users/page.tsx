@@ -2,27 +2,41 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getAllUsersAdmin } from "@/lib/api/user";
-import { Users, ChevronLeft, ShieldCheck, Mail, Calendar } from "lucide-react";
+import { getAllUsersAdmin, updateUserStatusAdmin } from "@/lib/api/user";
+import { Users, ChevronLeft, ShieldCheck, Mail, Calendar, Power } from "lucide-react";
+import { toast } from "@/store/toast";
 
 export default function AdminUsersPage() {
   const router = useRouter();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchUsers = async () => {
+    try {
+      const res: any = await getAllUsersAdmin();
+      setUsers(res.data ?? res);
+    } catch (err) {
+      console.error("Failed to fetch admin users:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const res: any = await getAllUsersAdmin();
-        setUsers(res.data ?? res);
-      } catch (err) {
-        console.error("Failed to fetch admin users:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchUsers();
   }, []);
+
+  const handleToggleStatus = async (userId: string, currentStatus: boolean) => {
+    try {
+      setUsers(users.map(u => u._id === userId ? { ...u, is_active: !currentStatus } : u));
+      await updateUserStatusAdmin(userId, !currentStatus);
+      toast.success(`User ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || "Failed to update user status");
+      // Revert optimistic update
+      fetchUsers();
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#f5f5f5] p-4 sm:p-6 md:p-10 pb-20">
@@ -59,9 +73,14 @@ export default function AdminUsersPage() {
                             </span>
                         )}
                     </h3>
-                    <div className={`text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded ${user.is_active ? 'text-green-600 bg-green-50' : 'text-gray-400 bg-gray-50'}`}>
+                    <button 
+                        onClick={() => handleToggleStatus(user._id, user.is_active)}
+                        className={`text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded flex items-center gap-1 transition-colors ${user.is_active ? 'text-green-600 bg-green-50 hover:bg-green-100' : 'text-gray-400 bg-gray-100 hover:bg-gray-200'}`}
+                        title={user.is_active ? "Click to Deactivate" : "Click to Activate"}
+                    >
+                        <Power size={10} />
                         {user.is_active ? 'Active' : 'Inactive'}
-                    </div>
+                    </button>
                   </div>
                   
                   <div className="space-y-1.5 mt-2">
