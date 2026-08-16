@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { login } from "@/lib/api/auth";
 import { useAuth } from "@/store/auth";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function LoginPage() {
   // ── All hooks must be declared before any conditional return ──
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,24 +76,31 @@ export default function LoginPage() {
             />
           </div>
 
-          <div className="mb-6 relative">
+          <div className="mb-6">
             <label className="block text-sm tracking-widest mb-2">
               Password
             </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => { setPassword(e.target.value); setError(null); }}
-              required
-              className="w-full bg-transparent border-b border-white/50 focus:border-white outline-none py-2"
-            />
-
-            <Link
-              href="/forgot-password"
-              className="absolute right-0 top-8 text-sm text-white/70 hover:text-white"
-            >
-              Forgot Password?
-            </Link>
+            <div className="relative flex items-center">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setError(null); }}
+                required
+                className="w-full bg-transparent border-b border-white/50 focus:border-white outline-none py-2 pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-0 text-white/70 hover:text-white transition-colors p-1"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Error */}
@@ -118,6 +127,15 @@ export default function LoginPage() {
             Don&apos;t have an account?{" "}
             <Link href="/signup" className="text-white hover:underline">
               Create one.
+            </Link>
+          </p>
+
+          <p className="text-center mt-3 text-sm">
+            <Link
+              href="/forgot-password"
+              className="text-white/70 hover:text-white underline transition-colors"
+            >
+              Forgot Password?
             </Link>
           </p>
         </form>

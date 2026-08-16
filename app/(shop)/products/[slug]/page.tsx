@@ -59,10 +59,25 @@ export default function ProductDetails() {
     fetchProduct();
   }, [slug]);
 
-  // Track recently viewed
+  // Track recently viewed and set single-option defaults
   useEffect(() => {
     if (product) {
       addProduct(product);
+
+      const pColors = product.attributes?.colors ?? [];
+      if (pColors.length === 1 && pColors[0]?.name) {
+        setColor(pColors[0].name);
+      }
+
+      const dColors = product.attributes?.design_colors ?? [];
+      if (dColors.length === 1 && dColors[0]?.name) {
+        setDesignColor(dColors[0].name);
+      }
+
+      const pSizes = product.attributes?.sizes ?? [];
+      if (pSizes.length === 1 && pSizes[0]) {
+        setSize(pSizes[0]);
+      }
     }
   }, [product, addProduct]);
 
@@ -144,8 +159,30 @@ export default function ProductDetails() {
   // Active variant: matches both selected color (by name) and size
   const activeVariant: any =
     (product.variants ?? []).find(
-      (v: any) => (v.product_color === color || v.color === color) && v.size === size
-    ) ?? null;
+      (v: any) =>
+        (!colors.length || v.product_color === color || v.color === color) &&
+        (!sizes.length || v.size === size)
+    ) ?? (product.variants?.[0] ?? null);
+
+  const validateSelections = () => {
+    if (sizes.length > 0 && !size && colors.length > 0 && !color) {
+      toast.error("Please select size and product color");
+      return false;
+    }
+    if (sizes.length > 0 && !size) {
+      toast.error("Please select a size");
+      return false;
+    }
+    if (colors.length > 0 && !color) {
+      toast.error("Please select a product color");
+      return false;
+    }
+    if (designColors.length > 0 && !designColor) {
+      toast.error("Please select a design color");
+      return false;
+    }
+    return true;
+  };
 
   // Price to display: variant price > base_price
   const displayPrice: number = activeVariant?.price ?? product.base_price;
@@ -400,14 +437,7 @@ export default function ProductDetails() {
           <div className="flex gap-4 mb-4 flex-col sm:flex-row">
             <button
               onClick={async () => {
-                if (!size || !color) {
-                  toast.error("Please select size and color");
-                  return;
-                }
-                if (designColors.length > 0 && !designColor) {
-                  toast.error("Please select a design color");
-                  return;
-                }
+                if (!validateSelections()) return;
 
                 try {
                   // Use the selected variant's SKU
@@ -445,14 +475,7 @@ export default function ProductDetails() {
             {!isAdmin && (
               <button
                 onClick={async () => {
-                  if (!size || !color) {
-                    toast.error("Please select size and color");
-                    return;
-                  }
-                  if (designColors.length > 0 && !designColor) {
-                    toast.error("Please select a design color");
-                    return;
-                  }
+                  if (!validateSelections()) return;
 
                   try {
                     // Use the selected variant's SKU

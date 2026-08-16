@@ -9,9 +9,9 @@ export default function Footer(props: any) {
       {/* TOP SECTION */}
       <div className="grid md:grid-cols-2 gap-12">
         {/* LEFT SIDE */}
-        <div className="flex flex-col justify-between">
+        <div className="flex flex-col">
           {/* Logo */}
-          <div className="text-red-600 text-3xl font-bold mb-10">
+          <div className="text-red-600 text-3xl font-bold mb-4">
             <img
               src={"/icons/logo_icon.svg"}
               alt="EVO Carlton Trends"
@@ -19,20 +19,8 @@ export default function Footer(props: any) {
             />
           </div>
 
-          {/* Email Input */}
-          <div className="max-w-sm">
-            <div className="flex justify-between items-center border-b border-gray-600 pb-2">
-              <input
-                type="email"
-                placeholder="Email"
-                className="bg-transparent outline-none text-sm w-full placeholder-gray-400"
-              />
-              <button className="text-xs tracking-widest">SUBMIT</button>
-            </div>
-          </div>
-
           {/* Social Icons */}
-          <div className="flex gap-6 mt-10 text-xl">
+          <div className="flex gap-6 mt-0 text-xl">
             <span className="cursor-pointer">◎</span>
             <span className="cursor-pointer">f</span>
           </div>
