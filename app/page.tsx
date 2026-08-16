@@ -202,15 +202,25 @@ function Slide({ section }: any) {
       {/* Overlay */}
       <div className="absolute inset-0 bg-black/30 transition-colors duration-500" />
 
-      {/* Title - Bottom Left */}
-      <div className="absolute bottom-16 left-8 sm:left-16 z-20 text-white">
+      {/* Overlay Content */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 sm:top-auto sm:translate-y-0 sm:bottom-16 sm:left-16 sm:translate-x-0 z-20 text-white text-center sm:text-left flex flex-col items-center sm:block gap-4 w-full px-6 sm:w-auto sm:px-0">
         <p className="text-sm sm:text-base font-light tracking-[0.5em] uppercase">
           {section.title}
         </p>
+
+        {/* SHOP NOW - Mobile view only (vertically & horizontally centered under title) */}
+        <div className="sm:hidden mt-2">
+          <Link
+            href={section.link}
+            className="border border-white/30 px-8 py-3 text-[10px] tracking-[0.4em] font-medium text-white/60 transition-all duration-300 hover:bg-white hover:text-black hover:border-white uppercase whitespace-nowrap inline-block"
+          >
+            SHOP NOW
+          </Link>
+        </div>
       </div>
 
-      {/* SHOP NOW - Center Bottom */}
-      <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20">
+      {/* SHOP NOW - Center Bottom for Desktop (sm and above) */}
+      <div className="hidden sm:block absolute bottom-16 left-1/2 -translate-x-1/2 z-20">
         <Link
           href={section.link}
           className="border border-white/30 px-10 py-4 text-[10px] tracking-[0.4em] font-medium text-white/60 transition-all duration-300 hover:bg-white hover:text-black hover:border-white uppercase whitespace-nowrap"
