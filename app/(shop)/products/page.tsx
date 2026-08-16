@@ -145,7 +145,7 @@ function ProductList() {
         </h1>
 
         <div className="flex items-center gap-4">
-          <button 
+          <button
             onClick={() => setShowMobileFilters(true)}
             className="md:hidden flex items-center gap-2 text-[10px] tracking-widest uppercase font-bold border border-black px-4 py-2 rounded-sm hover:bg-black hover:text-white transition-all"
           >
@@ -167,7 +167,7 @@ function ProductList() {
       <div className="flex flex-col md:flex-row gap-10 px-6 md:px-10 py-10">
         {/* Desktop Sidebar - Sticky Filters */}
         <div className="hidden md:block md:w-48 lg:w-64 flex-shrink-0">
-          <FilterContent 
+          <FilterContent
             selectedCategory={selectedCategory}
             setSelectedCategory={setSelectedCategory}
             selectedSubcategory={selectedSubcategory}
@@ -189,7 +189,7 @@ function ProductList() {
               <h2 className="text-xl font-bold tracking-tight">Filters</h2>
               <button onClick={() => setShowMobileFilters(false)} className="text-gray-400 font-bold">✕</button>
             </div>
-            <FilterContent 
+            <FilterContent
               selectedCategory={selectedCategory}
               setSelectedCategory={setSelectedCategory}
               selectedSubcategory={selectedSubcategory}
@@ -199,9 +199,9 @@ function ProductList() {
               sortBy={sortBy}
               setSortBy={setSortBy}
               availableFilters={availableFilters}
-              onFilterClick={() => {}} // Could auto-close on click if preferred
+              onFilterClick={() => { }} // Could auto-close on click if preferred
             />
-            <button 
+            <button
               onClick={() => setShowMobileFilters(false)}
               className="w-full bg-black text-white py-5 rounded-xl text-xs font-bold tracking-[0.3em] uppercase mt-12 mb-4"
             >
@@ -261,14 +261,14 @@ function ProductList() {
   );
 }
 
-function FilterContent({ 
-  selectedCategory, 
-  setSelectedCategory, 
+function FilterContent({
+  selectedCategory,
+  setSelectedCategory,
   selectedSubcategory,
   setSelectedSubcategory,
-  selectedColors, 
-  setSelectedColors, 
-  sortBy, 
+  selectedColors,
+  setSelectedColors,
+  sortBy,
   setSortBy,
   availableFilters,
   onFilterClick
@@ -298,15 +298,14 @@ function FilterContent({
                 setSelectedCategory(selectedCategory === cat ? "" : cat);
                 onFilterClick?.();
               }}
-              className={`text-left text-xs tracking-widest uppercase transition-colors hover:text-black ${
-                selectedCategory === cat ? "text-black font-bold" : "text-gray-500"
-              }`}
+              className={`text-left text-xs tracking-widest uppercase transition-colors hover:text-black ${selectedCategory === cat ? "text-black font-bold" : "text-gray-500"
+                }`}
             >
               {cat}
             </button>
           ))}
           {categories.length > 5 && (
-            <button 
+            <button
               onClick={() => setShowAllCategories(!showAllCategories)}
               className="text-[10px] tracking-widest uppercase font-bold text-gray-400 hover:text-black text-left mt-2 transition-colors"
             >
@@ -327,9 +326,8 @@ function FilterContent({
                 setSelectedSubcategory(selectedSubcategory === subcat ? "" : subcat);
                 onFilterClick?.();
               }}
-              className={`text-left text-xs tracking-widest uppercase transition-colors hover:text-black ${
-                selectedSubcategory === subcat ? "text-black font-bold" : "text-gray-500"
-              }`}
+              className={`text-left text-xs tracking-widest uppercase transition-colors hover:text-black ${selectedSubcategory === subcat ? "text-black font-bold" : "text-gray-500"
+                }`}
             >
               {subcat}
             </button>
@@ -338,7 +336,7 @@ function FilterContent({
             <span className="text-xs text-gray-400 italic">No subcategories available</span>
           )}
           {subcategories.length > 5 && (
-            <button 
+            <button
               onClick={() => setShowAllSubcategories(!showAllSubcategories)}
               className="text-[10px] tracking-widest uppercase font-bold text-gray-400 hover:text-black text-left mt-2 transition-colors"
             >
@@ -349,7 +347,7 @@ function FilterContent({
       </div>
 
       {/* Color Section */}
-      <div>
+      {/* <div>
         <h3 className="text-[10px] tracking-[0.3em] font-bold uppercase mb-6 text-gray-400">Color</h3>
         <div className="flex flex-col gap-4">
           {colorsToShow.map((clr: string) => (
@@ -380,10 +378,10 @@ function FilterContent({
             </button>
           )}
         </div>
-      </div>
+      </div> */}
 
       {(selectedCategory || selectedSubcategory || selectedColors.length > 0 || sortBy) && (
-        <button 
+        <button
           onClick={() => {
             setSelectedCategory("");
             setSelectedSubcategory("");
